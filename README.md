@@ -1,6 +1,5 @@
 
 
-```markdown
 # QuickEats — Cloud-Native Delivery Platform 🚀
 
 **Universidad Ricardo Palma**  
