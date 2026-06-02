@@ -1,10 +1,11 @@
-// components/LoginForm.tsx
 'use client';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation'; 
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function LoginForm() {
+  const router = useRouter(); 
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
@@ -13,9 +14,39 @@ export function LoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    await new Promise(r => setTimeout(r, 800));
-    setLoading(false);
-    toast.success('¡Bienvenido de nuevo!');
+
+    try {
+      const response = await fetch('http://localhost:3001/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success(`¡Bienvenido de nuevo, ${data.name || 'Usuario'}!`);
+
+        localStorage.setItem('token', data.access_token);
+        localStorage.setItem('role', data.role);
+
+        // 🔀 Rutas web reales basadas en tu estructura (URLs del navegador, no rutas de carpetas)
+        if (data.role === 'ADMIN') {
+          router.push('../frontend/app/admin/dashboard'); // 👑 Te redirige a la URL http://localhost:3000/admin
+        } else {
+          router.push('../frontend/app/user/home');  // 🍔 Te redirige a la URL http://localhost:3000/user
+        }
+      } else {
+        toast.error(data.message || 'Error al iniciar sesión. Revisa tus credenciales.');
+      }
+    } catch (error) {
+      console.error('Login Error:', error);
+      toast.error('No se pudo conectar con el servidor. ¿El Gateway está encendido?');
+    } finally {
+      setLoading(false); 
+    }
   };
 
   return (
@@ -28,10 +59,12 @@ export function LoginForm() {
           <input
             type="email"
             required
+            disabled={loading}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="tu@ejemplo.com"
-            className="w-full pl-12 pr-4 py-3.5 border border-gray-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all bg-white placeholder-gray-500"
+            // 🎯 Agregamos 'text-black' para forzar las letras a color negro
+            className="w-full pl-12 pr-4 py-3.5 border border-gray-200 rounded-xl text-base text-black focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all bg-white placeholder-gray-500 disabled:opacity-60"
           />
         </div>
       </div>
@@ -47,10 +80,12 @@ export function LoginForm() {
           <input
             type={showPass ? 'text' : 'password'}
             required
+            disabled={loading}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
-            className="w-full pl-12 pr-12 py-3.5 border border-gray-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all bg-white placeholder-gray-500"
+            // 🎯 Agregamos 'text-black' aquí también para forzar el texto a negro
+            className="w-full pl-12 pr-12 py-3.5 border border-gray-200 rounded-xl text-base text-black focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all bg-white placeholder-gray-500 disabled:opacity-60"
           />
           <button 
             type="button" 
