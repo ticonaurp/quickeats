@@ -28,14 +28,18 @@ export class AuthService {
     // 3. Guardar en PostgreSQL
     const user = await this.prisma.user.create({
       data: {
+        name: dto.name,
         email: dto.email,
         password: hashedPassword,
+        role: 'USER', // 👈 ¡SOLUCIÓN! Le pasamos el rol explícitamente para que TypeScript esté feliz
       },
     });
 
     return {
       id: user.id,
+      name: user.name,
       email: user.email,
+      role: user.role,
       createdAt: user.createdAt,
       message: 'Usuario registrado con éxito',
     };
@@ -56,14 +60,14 @@ export class AuthService {
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
-    const payload = { sub: user.id, email: user.email };
+    const payload = { sub: user.id, email: user.email, role: user.role }; 
     const token = await this.jwtService.signAsync(payload);
 
     return {
       access_token: token,
+      role: user.role,
+      name: user.name,
       message: 'Login exitoso',
     };
   }
-
-  
 }

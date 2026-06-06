@@ -64,13 +64,17 @@ let AuthService = class AuthService {
         const hashedPassword = await bcrypt.hash(dto.password, 10);
         const user = await this.prisma.user.create({
             data: {
+                name: dto.name,
                 email: dto.email,
                 password: hashedPassword,
+                role: 'USER',
             },
         });
         return {
             id: user.id,
+            name: user.name,
             email: user.email,
+            role: user.role,
             createdAt: user.createdAt,
             message: 'Usuario registrado con éxito',
         };
@@ -86,10 +90,12 @@ let AuthService = class AuthService {
         if (!isPasswordValid) {
             throw new common_1.UnauthorizedException('Credenciales inválidas');
         }
-        const payload = { sub: user.id, email: user.email };
+        const payload = { sub: user.id, email: user.email, role: user.role };
         const token = await this.jwtService.signAsync(payload);
         return {
             access_token: token,
+            role: user.role,
+            name: user.name,
             message: 'Login exitoso',
         };
     }
