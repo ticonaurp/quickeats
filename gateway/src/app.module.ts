@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
-import { RestaurantModule } from './restaurant/restaurant.module';
+import { RestaurantModule } from './restaurant/restaurant.module'; // 👈 1. Importa tu nuevo módulo
 
 @Module({
-  imports: [AuthModule, RestaurantModule],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [
+    AuthModule, 
+    RestaurantModule // 👈 2. Agrégalo aquí junto a los demás módulos
+  ], 
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}

@@ -34,9 +34,9 @@ export function LoginForm() {
 
         // 🔀 Rutas web reales basadas en tu estructura (URLs del navegador, no rutas de carpetas)
         if (data.role === 'ADMIN') {
-          router.push('../frontend/app/admin/dashboard'); // 👑 Te redirige a la URL http://localhost:3000/admin
+          router.push('/admin'); // 👑 Te redirige a la URL http://localhost:3000/admin
         } else {
-          router.push('../frontend/app/user/home');  // 🍔 Te redirige a la URL http://localhost:3000/user
+          router.push('../user/home');  // 🍔 Te redirige a la URL http://localhost:3000/user
         }
       } else {
         toast.error(data.message || 'Error al iniciar sesión. Revisa tus credenciales.');
