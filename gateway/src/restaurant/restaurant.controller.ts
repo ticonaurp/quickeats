@@ -1,29 +1,28 @@
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param } from '@nestjs/common'; // 👈 Cambiamos 'Put' por 'Patch'
 import { RestaurantService } from './restaurant.service';
 
-@Controller() // 💡 Lo dejamos vacío para que use directamente las rutas de los métodos
+@Controller('restaurants')
 export class RestaurantController {
   constructor(private readonly restaurantService: RestaurantService) {}
 
-  // 🍔 Endpoints de Restaurantes
-  @Post('restaurants')
-  createRestaurant(@Body() body: any) {
+  @Post()
+  create(@Body() body: any) {
     return this.restaurantService.forwardRequest('/restaurants', 'POST', body);
   }
 
-  @Get('restaurants')
-  findAllRestaurants() {
+  @Get()
+  findAll() {
     return this.restaurantService.forwardRequest('/restaurants', 'GET');
   }
 
-  // 🍕 Endpoints de Productos
-  @Post('products')
-  createProduct(@Body() body: any) {
-    return this.restaurantService.forwardRequest('/products', 'POST', body);
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.restaurantService.forwardRequest(`/restaurants/${id}`, 'GET');
   }
 
-  @Get('products')
-  findAllProducts() {
-    return this.restaurantService.forwardRequest('/products', 'GET');
+  // 🛠️ Cambiado de @Put a @Patch para sincronizarse con el Frontend
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() body: any) {
+    return this.restaurantService.forwardRequest(`/restaurants/${id}`, 'PATCH', body);
   }
 }

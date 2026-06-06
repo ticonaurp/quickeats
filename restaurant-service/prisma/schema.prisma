@@ -1,5 +1,5 @@
 datasource db {
-  provider = "postgresql"
+  provider = "postgresql" // 
 }
 
 generator client {
@@ -7,11 +7,18 @@ generator client {
 }
 
 model Restaurant {
-  id          String    @id @default(uuid())
-  name        String
-  description String
-  createdAt   DateTime  @default(now())
-  products    Product[]
+  id           String    @id @default(uuid())
+  name         String
+  description  String
+  category     String
+  address      String
+  deliveryTime Int
+  deliveryFee  Float
+  isOpen       Boolean   @default(true)
+  isFeatured   Boolean   @default(false)
+  image        String    // Tu campo obligatorio
+  createdAt    DateTime  @default(now())
+  products     Product[] // Mantén el cascarón de productos para que TS no chille
 }
 
 model Product {
@@ -19,9 +26,7 @@ model Product {
   name         String
   description  String
   price        Float
-  imageUrl     String?
   createdAt    DateTime   @default(now())
-
   restaurantId String
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 }

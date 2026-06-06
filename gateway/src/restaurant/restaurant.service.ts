@@ -2,8 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class RestaurantService {
-  // 💡 URL del microservicio de restaurantes
-  private readonly baseUrl = 'http://localhost:3003';
+  private readonly baseUrl = 'http://localhost:3003'; // 👈 Tu microservicio escuchará aquí
 
   async forwardRequest(path: string, method: string, body?: any) {
     const response = await fetch(`${this.baseUrl}${path}`, {
