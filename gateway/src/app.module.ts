@@ -1,13 +1,15 @@
 import { Module } from '@nestjs/common';
+import { HttpModule } from '@nestjs/axios';
 import { AuthModule } from './auth/auth.module';
-import { RestaurantModule } from './restaurant/restaurant.module'; // 👈 1. Importa tu nuevo módulo
+import { RestaurantModule } from './restaurant/restaurant.module';
+import { ProductModule } from './product/product.module'; // 👈 Tu importación
 
 @Module({
   imports: [
-    AuthModule, 
-    RestaurantModule // 👈 2. Agrégalo aquí junto a los demás módulos
-  ], 
-  controllers: [],
-  providers: [],
+    HttpModule,
+    AuthModule,
+    RestaurantModule,
+    ProductModule, // 👈 Registrado aquí
+  ],
 })
 export class AppModule {}

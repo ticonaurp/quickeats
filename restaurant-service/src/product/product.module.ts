@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
-import { ProductController } from './product.controller';
 import { ProductService } from './product.service';
-import { PrismaModule } from '../prisma/prisma.module'; // <-- Importación limpia
+import { ProductController } from './product.controller';
+import { PrismaModule } from '../prisma/prisma.module'; // Importamos tu módulo de Prisma
 
 @Module({
-  imports: [PrismaModule], // <-- Agregado aquí para habilitar Prisma
+  imports: [PrismaModule], // Asegura que PrismaService esté accesible aquí
   controllers: [ProductController],
   providers: [ProductService],
 })
