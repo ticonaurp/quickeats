@@ -39,7 +39,7 @@ export function RestaurantForm() {
     if (isEdit && id) {
       const loadRestaurantData = async () => {
         try {
-          const response = await fetch(`http://localhost:4000/restaurants/${id}`);
+          const response = await fetch(`http://localhost:3001/restaurants/${id}`);
           if (response.ok) {
             const existing = await response.json();
             setForm({
@@ -90,8 +90,8 @@ export function RestaurantForm() {
     try {
       // Determinamos si es un POST (Crear) o PATCH (Editar, estándar en NestJS)
       const url = isEdit 
-        ? `http://localhost:4000/restaurants/${id}` 
-        : 'http://localhost:4000/restaurants';
+        ? `http://localhost:3001/restaurants/${id}` 
+        : 'http://localhost:3001/restaurants';
         
       const method = isEdit ? 'PATCH' : 'POST';
 
