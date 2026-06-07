@@ -48,8 +48,8 @@ export default function ProductManagementPage() {
       try {
         setLoading(true);
         const [productsRes, restaurantsRes] = await Promise.all([
-          fetch('http://localhost:4000/products'),
-          fetch('http://localhost:4000/restaurants')
+          fetch('http://localhost:3001/products'),
+          fetch('http://localhost:3001/restaurants')
         ]);
 
         if (!productsRes.ok) throw new Error(`Productos falló: ${productsRes.status}`);

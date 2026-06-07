@@ -36,7 +36,7 @@ export default function NewProductPage() {
   useEffect(() => {
     const fetchRestaurants = async () => {
       try {
-        const res = await fetch('http://localhost:4000/restaurants');
+        const res = await fetch('http://localhost:3001/restaurants');
         if (res.ok) {
           const data = await res.json();
           setRestaurants(data);
@@ -58,7 +58,7 @@ export default function NewProductPage() {
 
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:4000/products', {
+      const response = await fetch('http://localhost:3001/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

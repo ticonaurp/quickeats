@@ -36,7 +36,7 @@ export default function RestaurantsPage() {
 
     const loadRestaurants = async () => {
       try {
-        const response = await fetch('http://localhost:4000/restaurants');
+        const response = await fetch('http://localhost:3001/restaurants');
         const data = await response.json();
 
         const formattedData = data.map((r: any) => ({
