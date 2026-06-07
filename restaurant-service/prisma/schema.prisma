@@ -24,9 +24,16 @@ model Restaurant {
 model Product {
   id           String     @id @default(uuid())
   name         String
-  description  String
+  description  String?    // 1. Cambiado a opcional con "?"
+  category     String     // 2. Agregado: Obligatorio para los filtros
+  calories     Int?       // 3. Agregado: Entero opcional para la información nutricional
   price        Float
+  image        String     // 4. Agregado: URL de la imagen (igual que en Restaurant)
+  isAvailable  Boolean    @default(true)  // 5. Agregado: Control de disponibilidad
+  isPopular    Boolean    @default(false) // 6. Agregado: Control de destacados
   createdAt    DateTime   @default(now())
+  
+  // Relaciones
   restaurantId String
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 }
