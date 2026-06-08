@@ -1,11 +1,10 @@
-¡Perfecto! Ya con el nombre oficial del proyecto (**QuickEats**), los integrantes del equipo y la justificación académica de los 5 tópicos alineados al plan de estudios, el archivo queda espectacular.
 
-Aquí tienes el contenido completo y definitivo para tu archivo **`README.md`** en la raíz del repositorio, adaptado exactamente con toda la información formal de tu proyecto de la universidad:
 
-```markdown
 # QuickEats — Cloud-Native Delivery Platform 🚀
 
-**Universidad Ricardo Palma** **Facultad de Ingeniería** **Escuela Profesional de Ingeniería Informática**
+**Universidad Ricardo Palma**  
+**Facultad de Ingeniería**  
+**Escuela Profesional de Ingeniería Informática**
 
 ---
 
@@ -20,7 +19,7 @@ Aquí tienes el contenido completo y definitivo para tu archivo **`README.md`** 
 
 ## 📝 Descripción Breve del Proyecto
 
-La solución propuesta consiste en **QuickEats**, una mini plataforma de delivery inspirada en aplicaciones como Uber Eats, diseñada bajo un enfoque de arquitectura distribuida basada en microservicios. El proyecto busca aplicar de manera integrada los principios de desarrollo cloud-native, automatización de despliegues y separación de responsabilidades en servicios independientes, replicando un caso de uso realista del sector gastronómico digital. Los usuarios finales podrán registrarse, autenticarse, explorar restaurantes con sus respectivos menús y generar órdenes de pedido.
+La solución propuesta consiste en **QuickEats**, una mini plataforma de delivery inspirada en aplicaciones como Uber Eats, diseñada bajo un enfoque de arquitectura distribuida basada en microservicios. El proyecto busca aplicar de manera integrada los principios de desarrollo cloud-native, automatización de despliegues y separación de responsabilidades en servicios independientes, replicando un caso de uso realista del sector gastronomómico digital. Los usuarios finales podrán registrarse, autenticarse, explorar restaurantes con sus respectivos menús y generar órdenes de pedido.
 
 La arquitectura técnica de la plataforma aprovecha las ventajas de un entorno contenerizado y desacoplado, donde el frontend desarrollado en **Next.js con Tailwind CSS** consume servicios a través de un **API Gateway** centralizado, el cual orquesta la comunicación HTTP REST entre cuatro microservicios independientes (**autenticación, restaurantes, órdenes y notificaciones**) construidos en **NestJS con Prisma ORM** y autenticación basada en **JWT**. La persistencia de datos se gestiona mediante **PostgreSQL**, mientras que el ecosistema se despliega de forma automatizada a través de un pipeline de integración y entrega continua en **GitHub Actions** hacia la plataforma cloud **Render**, asegurando un entorno escalable y portable.
 
@@ -61,8 +60,8 @@ Asegúrate de tener instalado en tu máquina:
 
 ### 2. Clonar el Repositorio
 ```bash
-git clone [https://github.com/ticonaurp/cloud-native-delivery-platform.git](https://github.com/ticonaurp/cloud-native-delivery-platform.git)
-cd cloud-native-delivery-platform
+git clone https://github.com/ticonaurp/quickeats.git
+cd quickeats
 
 ```
 
@@ -106,6 +105,7 @@ npm run start:dev
 
 * `GET /restaurants` - Recupera todos los restaurantes registrados junto con su lista de productos asociados (`include: { products: true }`).
 * `POST /restaurants` - Registra un nuevo establecimiento en la plataforma.
+
 ```json
 {
   "name": "Pizza Planet",
@@ -114,12 +114,11 @@ npm run start:dev
 
 ```
 
-
-
 ### 🍕 Módulo de Productos
 
 * `GET /products` - Lista el catálogo global de productos disponibles en el sistema.
 * `POST /products` - Agrega un platillo al menú de un restaurante específico mapeando su ID correspondiente.
+
 ```json
 {
   "name": "Pizza Pepperoni Familiar",
@@ -129,8 +128,6 @@ npm run start:dev
 }
 
 ```
-
-
 
 ---
 
@@ -145,16 +142,5 @@ npm run start:dev
 * [ ] Configuración del sistema de alertas asíncronas en `notification-service`.
 * [ ] Diseño de manifiestos y orquestación local con Kubernetes.
 * [ ] Automatización e integración del pipeline CI/CD en GitHub Actions hacia Render.
-
-```
-
-### 💡 Pasos para actualizarlo en tu proyecto:
-1. Copia este bloque de código.
-2. Abre el archivo `README.md` en la raíz de tu proyecto en VS Code, borra lo que haya y pega esto.
-3. Haz un nuevo commit rápido para que quede actualizado en tu GitHub:
-```bash
-git add README.md
-git commit -m "docs: update README with official project name QuickEats and academic details"
-git push origin main
 
 ```
