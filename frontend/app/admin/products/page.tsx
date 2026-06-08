@@ -82,7 +82,7 @@ export default function ProductManagementPage() {
   const handleDeleteConfirm = async () => {
     if (!deleteId) return;
     try {
-      const response = await fetch(`http://localhost:4000/products/${deleteId}`, {
+      const response = await fetch(`http://localhost:3001/products/${deleteId}`, {
         method: 'DELETE',
       });
 
@@ -107,7 +107,7 @@ export default function ProductManagementPage() {
     const updatedAvailable = !targetProduct.isAvailable;
 
     try {
-      const response = await fetch(`http://localhost:4000/products/${id}`, {
+      const response = await fetch(`http://localhost:3001/products/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
