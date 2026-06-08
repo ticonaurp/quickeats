@@ -1,0 +1,18 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Order {
+  id         String   @id @default(uuid())
+  userId     String
+  productId  String
+  quantity   Int
+  status     String   @default("PENDING")
+  createdAt  DateTime @default(now())
+
+  @@map("Order") // Ahora vivirá limpiamente en public.Order
+}

@@ -13,7 +13,7 @@ export default function LoginPage() {
       {/* Contenedor de Pantalla Dividida */}
       <main className="flex flex-1 flex-col lg:flex-row">
         
-        {/* PANEL IZQUIERDO: Bloque verde (Fuentes más grandes) */}
+        {/* PANEL IZQUIERDO: Bloque verde de Alejandro */}
         <div className="hidden lg:flex w-1/2 bg-[#22C55E] items-center justify-center p-12 relative overflow-hidden">
           <div className="text-center text-white relative z-10 max-w-lg">
             {/* Contenedor del Logo Q */}
@@ -21,7 +21,7 @@ export default function LoginPage() {
               <span className="font-black text-5xl text-white font-poppins">Q</span>
             </div>
             
-            {/* Textos de Bienvenida (Aumentados) */}
+            {/* Textos de Bienvenida */}
             <h2 className="text-5xl font-black mb-4 font-poppins tracking-tight">¡Bienvenido de nuevo!</h2>
             <p className="text-green-100 text-lg font-normal leading-relaxed">
               Tus restaurantes favoritos están a solo un toque de distancia. Inicia sesión para continuar tu viaje culinario.
@@ -33,11 +33,11 @@ export default function LoginPage() {
           <div className="absolute -top-10 -left-10 w-48 h-48 bg-white/5 rounded-full pointer-events-none" />
         </div>
 
-        {/* PANEL DERECHO: Formulario de Login (Fuentes más grandes) */}
+        {/* PANEL DERECHO: Formulario de Login */}
         <div className="flex-1 flex flex-col justify-center px-6 sm:px-12 lg:px-20 py-12 bg-white">
           <div className="max-w-md w-full mx-auto">
             
-            {/* Enlace de regreso (Aumentado a text-base) */}
+            {/* Enlace de regreso */}
             <Link 
               href="/" 
               className="inline-flex items-center gap-2 text-base text-gray-400 hover:text-gray-600 mb-8 transition-colors font-medium"
@@ -45,7 +45,7 @@ export default function LoginPage() {
               <ArrowLeft size={18} /> Volver al inicio
             </Link>
 
-            {/* Encabezados (Aumentados) */}
+            {/* Encabezados */}
             <h1 className="font-black text-5xl text-gray-900 mb-2 font-poppins tracking-tight">Iniciar sesión</h1>
             <p className="text-gray-500 text-base mb-8">
               ¿No tienes una cuenta?{' '}
@@ -54,7 +54,7 @@ export default function LoginPage() {
               </Link>
             </p>
             
-            {/* Formulario modular */}
+            {/* Formulario modular (La lógica de tu compañero vivirá aquí dentro) */}
             <LoginForm />
           </div>
         </div>
