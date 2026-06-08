@@ -12,12 +12,14 @@ const app_controller_1 = require("./app.controller");
 const app_service_1 = require("./app.service");
 const auth_module_1 = require("./auth/auth.module");
 const restaurant_module_1 = require("./restaurant/restaurant.module");
+const order_module_1 = require("./order/order.module");
+const notification_module_1 = require("./notification/notification.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
-        imports: [auth_module_1.AuthModule, restaurant_module_1.RestaurantModule],
+        imports: [auth_module_1.AuthModule, restaurant_module_1.RestaurantModule, order_module_1.OrderModule, notification_module_1.NotificationModule],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],
     })

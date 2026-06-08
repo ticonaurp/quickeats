@@ -1,14 +1,23 @@
 datasource db {
   provider = "postgresql"
+  // Asegúrate de tener tu URL o el ?schema=auth aquí al final si usaste el enfoque de esquemas
 }
 
 generator client {
   provider = "prisma-client-js"
 }
 
+// 1. Definimos los roles oficiales que existirán en QuickEats
+enum Role {
+  USER
+  ADMIN
+}
+
 model User {
   id        String   @id @default(uuid())
+  name      String
   email     String   @unique
   password  String
+  role      Role     
   createdAt DateTime @default(now())
 }
