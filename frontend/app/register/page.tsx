@@ -13,7 +13,7 @@ export default function RegisterPage() {
       {/* Contenedor de Pantalla Dividida */}
       <main className="flex flex-1 flex-col lg:flex-row">
         
-        {/* PANEL IZQUIERDO: Mensajes de beneficios */}
+        {/* PANEL IZQUIERDO: Mensajes de beneficios en el bloque verde */}
         <div className="hidden lg:flex w-1/2 bg-[#22C55E] items-center justify-center p-12 relative overflow-hidden">
           <div className="text-white relative z-10 max-w-lg">
             
@@ -29,7 +29,7 @@ export default function RegisterPage() {
                 <span className="text-xl">✅</span> Regístrate gratis — sin tarjeta de crédito
               </li>
               <li className="flex items-center gap-3">
-                <span className="text-xl">🏷️</span> Tiempo de entrega promedio de 30 min
+                <span className="text-xl">🍔</span> Accede a tus restaurantes favoritos de forma inmediata
               </li>
             </ul>
           </div>
@@ -60,7 +60,7 @@ export default function RegisterPage() {
               </Link>
             </p>
             
-            {/* Formulario modular de registro */}
+            {/* Formulario modular de registro (La lógica de tu compañero se integra aquí) */}
             <RegisterForm />
           </div>
         </div>

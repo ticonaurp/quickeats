@@ -1,11 +1,92 @@
+version: '3.8'
+
 services:
-  postgres:
-    image: postgres:16
-    container_name: delivery-postgres
-    restart: always
+  # 🗄️ La Base de Datos Centralizada
+  postgres_db:
+    image: postgres:15-alpine
+    container_name: quickeats_postgres
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin123
       POSTGRES_DB: delivery_db
     ports:
-      - '5432:5432'
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - quickeats_network
+
+  # 🏛️ API Gateway (Puerto 3001)
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    container_name: quickeats_gateway
+    ports:
+      - "3001:3001"
+    depends_on:
+      - auth-service
+      - restaurant-service
+      - order-service
+      - notification-service
+    networks:
+      - quickeats_network
+
+  # 🔐 Auth Service (Puerto 3002)
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    container_name: quickeats_auth
+    ports:
+      - "3002:3002"
+    networks:
+      - quickeats_network
+
+  # 🍔 Restaurant Service (Puerto 3003)
+  restaurant-service:
+    build:
+      context: ./restaurant-service
+      dockerfile: Dockerfile
+    container_name: quickeats_restaurant
+    ports:
+      - "3003:3003"
+    networks:
+      - quickeats_network
+
+  # 🛒 Order Service (Puerto 3004)
+  order-service:
+    build:
+      context: ./order-service
+      dockerfile: Dockerfile
+    container_name: quickeats_order
+    ports:
+      - "3004:3004"
+    environment:
+      - DATABASE_URL=postgresql://admin:admin123@postgres_db:5432/delivery_db?schema=public
+    depends_on:
+      - postgres_db
+    networks:
+      - quickeats_network
+
+  # 🔔 Notification Service (Puerto 3005)
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    container_name: quickeats_notification
+    ports:
+      - "3005:3005"
+    environment:
+      - DATABASE_URL=postgresql://admin:admin123@postgres_db:5432/delivery_db?schema=public
+    depends_on:
+      - postgres_db
+    networks:
+      - quickeats_network
+
+volumes:
+  postgres_data:
+
+networks:
+  quickeats_network:
+    driver: bridge

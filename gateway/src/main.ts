@@ -14,5 +14,6 @@ async function bootstrap() {
 
   // Mantenemos tu configuración original con la variable de entorno o el puerto 3001
   await app.listen(process.env.PORT ?? 3001);
+  console.log(`Gateway running on port ${process.env.PORT ?? 3001}`);
 }
 bootstrap();
