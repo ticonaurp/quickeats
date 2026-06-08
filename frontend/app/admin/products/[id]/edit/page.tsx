@@ -44,8 +44,8 @@ export default function EditProductPage() {
       try {
         setLoading(true);
         const [productRes, restaurantsRes] = await Promise.all([
-          fetch(`http://localhost:4000/products/${productId}`),
-          fetch('http://localhost:4000/restaurants')
+          fetch(`http://localhost:3001/products/${productId}`),
+          fetch('http://localhost:3001/restaurants')
         ]);
 
         if (!productRes.ok) throw new Error('No se pudo cargar el producto');
@@ -89,7 +89,7 @@ export default function EditProductPage() {
 
     setSaving(true);
     try {
-      const response = await fetch(`http://localhost:4000/products/${productId}`, {
+      const response = await fetch(`http://localhost:3001/products/${productId}`, {
         method: 'PUT', // Persistencia mediante actualización total DTO
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
