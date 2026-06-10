@@ -30,21 +30,42 @@ export function RegisterForm() {
     }
 
     try {
+      // 🛠️ Creamos un payload explícito formateado para tu esquema de Prisma 7
+      const payload = {
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        password: password,
+        role: "USER" // 👈 Obligatorio para evitar el Error 500 por campo faltante
+      };
+
+      console.log('🚀 Enviando datos al Gateway:', payload);
+
       const response = await fetch('http://localhost:3001/auth/register', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(payload),
       });
 
-      const data = await response.json();
+      // Parseamos la respuesta de forma segura por si el servidor no devuelve un JSON válido
+      const data = await response.json().catch(() => null);
+      console.log('📥 Respuesta del servidor:', { status: response.status, data });
 
       if (response.ok) {
         toast.success('¡Usuario registrado con éxito!');
         router.push('/login');
       } else {
-        toast.error(data.message || 'Error al registrar');
+        // Manejador por si NestJS devuelve un array de errores de validación (class-validator)
+        if (data && Array.isArray(data.message)) {
+          toast.error(`Validación: ${data.message.join(', ')}`);
+        } else {
+          toast.error(data?.message || `Error del servidor (Código ${response.status})`);
+        }
       }
     } catch (error) {
+      console.error('💥 Error en el Fetch:', error);
       toast.error('Error de conexión con el servidor');
     }
   };

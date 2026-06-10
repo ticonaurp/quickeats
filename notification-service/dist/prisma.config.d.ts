@@ -1,7 +1,2 @@
-declare const _default: {
-    schema: string;
-    datasource: {
-        url: string | undefined;
-    };
-};
-export default _default;
+declare const config: any;
+export default config;

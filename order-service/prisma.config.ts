@@ -1,10 +1,18 @@
-import * as dotenv from 'dotenv';
-dotenv.config(); // Carga las variables del .env para la CLI de Prisma 7
+import "dotenv/config";
+import { defineConfig } from "prisma/config";
 
-import { defineConfig } from '@prisma/config';
-
-export default defineConfig({
-  datasource: {
-    url: process.env.DATABASE_URL,
+const config: any = {
+  schema: "prisma/schema.prisma",
+  migrations: {
+    path: "prisma/migrations",
   },
-});
+  datasource: {
+    url: process.env["DATABASE_URL"],
+  }
+};
+
+if (process.argv.some(arg => arg.includes('prisma') || arg.includes('db') || arg.includes('push'))) {
+  config.datasource.url = process.env["DIRECT_URL"];
+}
+
+export default defineConfig(config);

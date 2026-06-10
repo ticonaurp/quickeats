@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # 🗄️ La Base de Datos Centralizada
+  # 🗄️ La Base de Datos Local (Puerto externo 5433 para liberar el 5432)
   postgres_db:
     image: postgres:15-alpine
     container_name: quickeats_postgres
@@ -10,7 +10,7 @@ services:
       POSTGRES_PASSWORD: admin123
       POSTGRES_DB: delivery_db
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -24,6 +24,8 @@ services:
     container_name: quickeats_gateway
     ports:
       - "3001:3001"
+    env_file:
+      - ./gateway/.env
     depends_on:
       - auth-service
       - restaurant-service
@@ -32,7 +34,7 @@ services:
     networks:
       - quickeats_network
 
-  # 🔐 Auth Service (Puerto 3002)
+  # 🔐 Auth Service (Puerto 3002 - Conectado a Supabase)
   auth-service:
     build:
       context: ./auth-service
@@ -40,47 +42,70 @@ services:
     container_name: quickeats_auth
     ports:
       - "3002:3002"
+    env_file:
+      - ./auth-service/.env
+    environment:
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
     networks:
       - quickeats_network
 
-  # 🍔 Restaurant Service (Puerto 3003)
+  # 🍔 Restaurant Service (Puerto 3003 - Modo Desarrollo Vivo)
   restaurant-service:
     build:
       context: ./restaurant-service
       dockerfile: Dockerfile
+      target: builder
     container_name: quickeats_restaurant
     ports:
       - "3003:3003"
+    env_file:
+      - ./restaurant-service/.env
+    environment:
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
+    volumes:
+      - ./restaurant-service:/app
+      - /app/node_modules
+    command: npm run start:dev
     networks:
       - quickeats_network
 
-  # 🛒 Order Service (Puerto 3004)
+  # 🛒 Order Service (Puerto 3004 - Modo Desarrollo Vivo)
   order-service:
     build:
       context: ./order-service
       dockerfile: Dockerfile
+      target: builder
     container_name: quickeats_order
     ports:
       - "3004:3004"
+    env_file:
+      - ./order-service/.env
     environment:
-      - DATABASE_URL=postgresql://admin:admin123@postgres_db:5432/delivery_db?schema=public
-    depends_on:
-      - postgres_db
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
+    volumes:
+      - ./order-service:/app
+      - /app/node_modules
+    command: npm run start:dev
     networks:
       - quickeats_network
 
-  # 🔔 Notification Service (Puerto 3005)
+  # 🔔 Notification Service (Puerto 3005 - Modo Desarrollo Vivo)
   notification-service:
     build:
       context: ./notification-service
       dockerfile: Dockerfile
+      target: builder
     container_name: quickeats_notification
     ports:
       - "3005:3005"
+    env_file:
+      - ./notification-service/.env
     environment:
-      - DATABASE_URL=postgresql://admin:admin123@postgres_db:5432/delivery_db?schema=public
-    depends_on:
-      - postgres_db
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
+    volumes:
+      - ./notification-service:/app
+      - /app/node_modules
+    command: npm run start:dev
     networks:
       - quickeats_network
 

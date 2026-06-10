@@ -4,31 +4,39 @@ import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class AuthService {
-    // Definimos la URL base de nuestro microservicio de autenticación
-    private readonly authServiceUrl = 'http://localhost:3002/auth';
+    // 🔑 SOLUCIÓN: Leemos la URL del .env que apunta a 'http://auth-service:3002'
+    // Si por alguna razón no existiera, dejamos el fallback por defecto
+    private readonly authServiceUrl = process.env.AUTH_SERVICE_URL || 'http://auth-service:3002';
 
     constructor(private readonly httpService: HttpService) { }
 
     async register(body: any) {
         try {
-            // Reenviamos los datos al puerto 3002
+            // 🕵️ Spy 1: Ver a qué URL exacta está intentando disparar el Gateway
+            console.log('🚀 Gateway redirigiendo petición a:', `${this.authServiceUrl}/auth/register`);
+            
             const response = await firstValueFrom(
-                this.httpService.post(`${this.authServiceUrl}/register`, body)
+                this.httpService.post(`${this.authServiceUrl}/auth/register`, body)
             );
             return response.data;
         } catch (error: any) {
-            // Si el microservicio responde con error (ej. 400), lo capturamos y se lo pasamos al frontend
+            // 🕵️ Spy 2: Imprimir el verdadero error de red o de Axios en los logs de Docker
+            console.error('❌ Error real atrapado en el Gateway:', error.message);
+            if (error.response) {
+                console.error('📦 Datos devueltos por el microservicio:', error.response.data);
+            }
+
             throw new HttpException(
                 error.response?.data || 'Error interno en Auth Service',
                 error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR,
             );
         }
     }
-
     async login(body: any) {
         try {
+            // Ahora apuntará correctamente a http://auth-service:3002/auth/login
             const response = await firstValueFrom(
-                this.httpService.post(`${this.authServiceUrl}/login`, body)
+                this.httpService.post(`${this.authServiceUrl}/auth/login`, body)
             );
             return response.data;
         } catch (error: any) {
@@ -41,9 +49,10 @@ export class AuthService {
 
     async getProfile(token: string) {
         try {
+            // Ahora apuntará correctamente a http://auth-service:3002/auth/profile
             const response = await firstValueFrom(
-                this.httpService.get(`${this.authServiceUrl}/profile`, {
-                    headers: { Authorization: token }, // <-- Pasamos el token al microservicio
+                this.httpService.get(`${this.authServiceUrl}/auth/profile`, {
+                    headers: { Authorization: token },
                 })
             );
             return response.data;
