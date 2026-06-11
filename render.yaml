@@ -1,12 +1,12 @@
 services:
-  # 1. FRONTEND 
+  # 1. FRONTEND (Configuración Nativa Node - Sin Dockerfile)
   - type: web
     name: quickeats-frontend-staging
-    env: docker
-    dockerfilePath: ./frontend/Dockerfile
-    dockerContext: .
+    env: node
     plan: free
     region: ohio
+    buildCommand: "cd frontend && npm install && npm run build"
+    startCommand: "cd frontend && npm run start"
     envVars:
       - key: NEXT_PUBLIC_API_URL
         value: https://quickeats-gateway-staging.onrender.com
@@ -15,8 +15,8 @@ services:
   - type: web
     name: quickeats-gateway-staging
     env: docker
-    dockerfilePath: ./gateway/Dockerfile
-    dockerContext: .
+    dockerfilePath: gateway/Dockerfile
+    dockerContext: gateway 
     plan: free
     region: ohio
     envVars:
@@ -32,11 +32,11 @@ services:
         value: https://quickeats-notification-service-staging.onrender.com
 
   # 3. AUTH SERVICE
-  - type: web 
+  - type: web
     name: quickeats-auth-service-staging
     env: docker
-    dockerfilePath: ./auth-service/Dockerfile
-    dockerContext: .
+    dockerfilePath: auth-service/Dockerfile
+    dockerContext: auth-service 
     plan: free
     region: ohio
     envVars:
@@ -44,11 +44,11 @@ services:
         value: 3002
 
   # 4. RESTAURANT SERVICE 
-  - type: web 
+  - type: web
     name: quickeats-restaurant-service-staging
     env: docker
-    dockerfilePath: ./restaurant-service/Dockerfile
-    dockerContext: .
+    dockerfilePath: restaurant-service/Dockerfile
+    dockerContext: restaurant-service 
     plan: free
     region: ohio
     envVars:
@@ -56,11 +56,11 @@ services:
         value: 3003
 
   # 5. ORDER SERVICE 
-  - type: web 
+  - type: web
     name: quickeats-order-service-staging
     env: docker
-    dockerfilePath: ./order-service/Dockerfile
-    dockerContext: .
+    dockerfilePath: order-service/Dockerfile
+    dockerContext: order-service 
     plan: free
     region: ohio
     envVars:
@@ -68,12 +68,11 @@ services:
         value: 3004
 
   # 6. NOTIFICATION SERVICE 
-  - type: web 
+  - type: web
     name: quickeats-notification-service-staging
     env: docker
-    dockerfilePath: ./notification-service/Dockerfile
-    dockerContext: .
-    plan: free
+    dockerfilePath: notification-service/Dockerfile
+    dockerContext: notification-service 
     region: ohio
     envVars:
       - key: PORT
