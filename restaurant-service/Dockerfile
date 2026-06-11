@@ -3,13 +3,19 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
+RUN npx prisma generate
 RUN npm run build
 
 FROM node:20-alpine AS runner
 WORKDIR /app
 COPY package*.json ./
 RUN npm install --only=production
+
+# LA MAGIA: Copiamos tanto @prisma como la carpeta interna oculta .prisma
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/prisma ./prisma
 
 EXPOSE 3003
-CMD ["node", "dist/main"]
+CMD ["node", "dist/main.js"]

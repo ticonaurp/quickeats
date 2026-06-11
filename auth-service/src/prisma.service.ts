@@ -1,20 +1,43 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { Pool } from 'pg';
+import pkgPg from 'pg'; 
+
+const { Pool } = pkgPg;
 
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit {
+export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   constructor() {
-    // Configurar el pool de conexión nativo de Postgres para Prisma v7
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    const connectionString = process.env.DATABASE_URL;
+
+    // 1. Extraemos el esquema dinámicamente de la URL limpia
+    let schema = 'public';
+    if (connectionString) {
+      try {
+        const url = new URL(connectionString);
+        schema = url.searchParams.get('schema') || 'public';
+      } catch (error) {
+        schema = 'public';
+      }
+    }
+
+    // 2. Creamos el pool inyectando el search_path de Supabase
+    const pool = new Pool({ 
+      connectionString,
+      options: `-c search_path=${schema}`
+    });
+    
     const adapter = new PrismaPg(pool);
     
-    // Pasar el adaptador al constructor de PrismaClient
-    super({ adapter });
+    // 3. Pasamos el adapter obligatorio exigido por Prisma 7
+    super({ adapter } as any);
   }
 
   async onModuleInit() {
     await this.$connect();
+  }
+
+  async onModuleDestroy() {
+    await this.$disconnect();
   }
 }

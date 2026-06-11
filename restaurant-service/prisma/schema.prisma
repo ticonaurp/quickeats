@@ -1,9 +1,11 @@
 datasource db {
-  provider = "postgresql" // 
+  provider = "postgresql"
+  schemas  = ["restaurant_service"] // 🎯 1. Le indicamos a Prisma el territorio exacto en Supabase
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"] // 🎯 2. Activamos la característica para salir de 'public'
 }
 
 model Restaurant {
@@ -16,24 +18,28 @@ model Restaurant {
   deliveryFee  Float
   isOpen       Boolean   @default(true)
   isFeatured   Boolean   @default(false)
-  image        String    // Tu campo obligatorio
+  image        String    
   createdAt    DateTime  @default(now())
-  products     Product[] // Mantén el cascarón de productos para que TS no chille
+  products     Product[] 
+
+  @@schema("restaurant_service") // 🎯 3. Mapeo explícito para el modelo Restaurant
 }
 
 model Product {
   id           String     @id @default(uuid())
   name         String
-  description  String?    // 1. Cambiado a opcional con "?"
-  category     String     // 2. Agregado: Obligatorio para los filtros
-  calories     Int?       // 3. Agregado: Entero opcional para la información nutricional
+  description  String?    
+  category     String     
+  calories     Int?       
   price        Float
-  image        String     // 4. Agregado: URL de la imagen (igual que en Restaurant)
-  isAvailable  Boolean    @default(true)  // 5. Agregado: Control de disponibilidad
-  isPopular    Boolean    @default(false) // 6. Agregado: Control de destacados
+  image        String     
+  isAvailable  Boolean    @default(true)  
+  isPopular    Boolean    @default(false) 
   createdAt    DateTime   @default(now())
   
   // Relaciones
   restaurantId String
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@schema("restaurant_service") // 🎯 4. Mapeo explícito para el modelo Product
 }

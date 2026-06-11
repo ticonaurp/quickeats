@@ -32,11 +32,11 @@ export function LoginForm() {
         localStorage.setItem('token', data.access_token);
         localStorage.setItem('role', data.role);
 
-        // 🔀 Rutas web reales basadas en tu estructura (URLs del navegador, no rutas de carpetas)
+        // 🔑 SOLUCIÓN: Usamos rutas absolutas con '/' para evitar fallos de Next.js
         if (data.role === 'ADMIN') {
-          router.push('/admin'); // 👑 Te redirige a la URL http://localhost:3000/admin
+          router.push('/admin'); 
         } else {
-          router.push('../user/home');  // 🍔 Te redirige a la URL http://localhost:3000/user
+          router.push('/user'); // 🍔 Te redirige de forma segura a http://localhost:3000/user
         }
       } else {
         toast.error(data.message || 'Error al iniciar sesión. Revisa tus credenciales.');

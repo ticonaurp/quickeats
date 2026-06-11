@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 @Injectable()
 export class AuthService {
@@ -31,7 +31,9 @@ export class AuthService {
         name: dto.name,
         email: dto.email,
         password: hashedPassword,
-        role: 'USER', // 👈 ¡SOLUCIÓN! Le pasamos el rol explícitamente para que TypeScript esté feliz
+        // SOLUCIÓN: Quitamos la línea "role: 'USER'" de aquí.
+        // Como en tu schema.prisma ya tiene '@default(USER)', 
+        // la base de datos se encargará de asignarlo automáticamente de forma segura.
       },
     });
 

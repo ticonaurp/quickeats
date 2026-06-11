@@ -36,10 +36,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const dotenv = __importStar(require("dotenv"));
 const path = __importStar(require("path"));
 dotenv.config({ path: path.resolve(__dirname, '.env') });
-exports.default = {
+const config = {
     schema: "prisma/schema.prisma",
     datasource: {
         url: process.env.DATABASE_URL,
     },
 };
+if (process.argv.some(arg => arg.includes('prisma') || arg.includes('db') || arg.includes('push'))) {
+    config.datasource.url = process.env.DIRECT_URL;
+}
+exports.default = config;
 //# sourceMappingURL=prisma.config.js.map
