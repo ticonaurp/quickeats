@@ -6,7 +6,6 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// 1. Definimos los roles oficiales que existirán en QuickEats
 enum Role {
   USER
   ADMIN
@@ -17,6 +16,6 @@ model User {
   name      String
   email     String   @unique
   password  String
-  role      Role     @default(USER) // 👈 ¡Agrega esto!
+  role      Role     @default(USER)
   createdAt DateTime @default(now())
 }

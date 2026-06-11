@@ -1,14 +1,13 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Store } from 'lucide-react';
+import { Store, AlertCircle } from 'lucide-react'; 
 import { Sidebar } from '../components/Sidebar'; 
 import { RestaurantHeader } from './components/RestaurantHeader';
 import { SearchBar } from './components/SearchBar';
 import { RestaurantTable } from './components/RestaurantTable';
 import { RestaurantMobileList } from './components/RestaurantMobileList';
 
-// 1. 💡 AGREGA ESTA INTERFAZ AQUÍ ARRIBA (Para que TypeScript conozca la estructura)
 interface Restaurant {
   id: string;
   name: string;
@@ -24,31 +23,58 @@ interface Restaurant {
 
 export default function RestaurantsPage() {
   const [search, setSearch] = useState('');
-  
-  // 2. 🔑 CAMBIA ESTA LÍNEA: Ahora le decimos que guardará un arreglo de tipo Restaurant
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]); 
-  
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(true); 
+  const [error, setError] = useState<string | null>(null); 
 
   useEffect(() => {
     setMounted(true);
 
     const loadRestaurants = async () => {
       try {
+        setError(null); 
         const response = await fetch('http://localhost:3001/restaurants');
-        const data = await response.json();
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || `Error del servidor (Código ${response.status})`);
+        }
 
-        const formattedData = data.map((r: any) => ({
+        const rawData = await response.json();
+
+        // 🔍 CONTROL DE QA: Imprimimos en la consola del navegador la respuesta exacta para auditarla
+        console.log("🔍 [QA AUDIT] Respuesta cruda del Gateway:", rawData);
+
+        let realRestaurantsArray: any[] = [];
+
+        // 🛡️ EXTRACTOR AUTOMÁTICO DE ARREGLOS (Soporta cualquier estructura de backend)
+        if (Array.isArray(rawData)) {
+          realRestaurantsArray = rawData; 
+        } else if (rawData && typeof rawData === 'object') {
+          // Buscamos dinámicamente si alguna de las propiedades del objeto contiene el arreglo de datos
+          const potentialArray = Object.values(rawData).find(val => Array.isArray(val));
+          if (potentialArray) {
+            realRestaurantsArray = potentialArray as any[];
+          } else {
+            throw new Error("El formato JSON no contiene ningún arreglo de restaurantes válido.");
+          }
+        } else {
+          throw new Error("La respuesta del servidor no es un objeto JSON válido.");
+        }
+
+        // 🚀 Mapeo ultra-seguro
+        const formattedData = realRestaurantsArray.map((r: any) => ({
           ...r,
           reviewCount: r.reviewCount ?? 0,
-          deliveryTime: typeof r.deliveryTime === 'number' ? `${r.deliveryTime} min` : r.deliveryTime,
-          image: r.image 
+          deliveryTime: typeof r.deliveryTime === 'number' ? `${r.deliveryTime} min` : (r.deliveryTime ?? '30 min'),
+          image: r.image ?? ''
         }));
 
         setRestaurants(formattedData);
-      } catch (error) {
-        console.error("Error al conectar con el Gateway:", error);
+      } catch (error: any) {
+        console.error("❌ Error en el flujo de integración:", error);
+        setError(error.message || "No se pudo establecer conexión con el servidor backend.");
       } finally {
         setLoading(false);
       }
@@ -63,7 +89,6 @@ export default function RestaurantsPage() {
     r.category.toLowerCase().includes(search.toLowerCase())
   );
 
-  // ✅ Con el useState tipado, este map ya no dará error de tipos
   const handleToggleOpen = (id: string) => {
     setRestaurants(prev => prev.map(r => r.id === id ? { ...r, isOpen: !r.isOpen } : r));
   };
@@ -87,6 +112,14 @@ export default function RestaurantsPage() {
             <div className="text-center py-16 text-gray-400">
               <p className="text-sm font-medium animate-pulse">Conectando con el Gateway y cargando restaurantes...</p>
             </div>
+          ) : error ? (
+            <div className="text-center py-16 px-4 bg-red-50/50 text-red-600">
+              <AlertCircle size={40} className="mx-auto mb-3 text-red-400 stroke-[1.5]" />
+              <p className="text-sm font-semibold mb-1">Error de integración en el Backend</p>
+              <p className="text-xs text-red-500 max-w-md mx-auto font-mono bg-white p-3 rounded-lg border border-red-100 shadow-2xl mt-2">
+                {error}
+              </p>
+            </div>
           ) : (
             <>
               <RestaurantTable data={filtered} onToggleOpen={handleToggleOpen} />
@@ -94,8 +127,7 @@ export default function RestaurantsPage() {
             </>
           )}
 
-          {/* Estado de Búsqueda Vacía */}
-          {!loading && filtered.length === 0 && (
+          {!loading && !error && filtered.length === 0 && (
             <div className="text-center py-16 text-gray-400 bg-white">
               <Store size={40} className="mx-auto mb-3 text-gray-300 stroke-[1.5]" />
               <p className="text-sm font-medium">No se encontraron restaurantes registrados.</p>
