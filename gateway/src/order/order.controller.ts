@@ -3,8 +3,11 @@ import { type Response } from 'express';
 
 @Controller('orders') // http://localhost:3001/orders
 export class OrderController {
-  // Cambia esto si en producción usas otra URL, por ahora apunta al microservicio local
-  private readonly ORDER_SERVICE_URL = 'http://localhost:3004/orders';
+  // 🌐 CLAVE DE INFRAESTRUCTURA:
+  // Leemos la URL asignada por Render. Si no existe (como en local), usa el fallback al puerto 3004.
+  private readonly ORDER_SERVICE_URL = process.env.ORDER_SERVICE_URL
+    ? `${process.env.ORDER_SERVICE_URL}/orders`
+    : 'http://localhost:3004/orders';
 
   @Post()
   async createOrder(@Body() body: any, @Res() res: Response) {

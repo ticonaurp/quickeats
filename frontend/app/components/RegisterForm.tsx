@@ -38,9 +38,13 @@ export function RegisterForm() {
         role: "USER" // 👈 Obligatorio para evitar el Error 500 por campo faltante
       };
 
-      console.log('🚀 Enviando datos al Gateway:', payload);
+      // 🌐 Obtenemos la URL del API Gateway de forma dinámica de las variables de entorno
+      // Si la variable no existe (como en local), usará 'http://localhost:3001' como respaldo
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
-      const response = await fetch('http://localhost:3001/auth/register', {
+      console.log(`🚀 Enviando datos al Gateway (${baseUrl}):`, payload);
+
+      const response = await fetch(`${baseUrl}/auth/register`, { // 👈 Cambiado a plantilla dinámica
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

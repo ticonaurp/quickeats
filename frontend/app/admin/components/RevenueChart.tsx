@@ -31,7 +31,7 @@ export function RevenueChart() {
           <YAxis tick={{ fontSize: 11, fill: '#9ca3af', fontWeight: 500 }} axisLine={false} tickLine={false} tickFormatter={v => `$${v / 1000}k`} />
           <Tooltip
             contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', fontSize: '12px' }}
-            formatter={(v: number) => [`$${v.toLocaleString()}`, 'Ingresos']}
+            formatter={(v: any) => [`$${Number(v).toLocaleString()}`, 'Ingresos']}
           />
           <Area type="monotone" dataKey="revenue" stroke="#22C55E" strokeWidth={2.5} fill="url(#revenueGrad)" dot={{ r: 4, fill: '#22C55E', strokeWidth: 0 }} />
         </AreaChart>

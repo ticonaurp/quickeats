@@ -5,10 +5,13 @@ export interface CreateOrderPayload {
   quantity: number;
 }
 
+// 🌐 Base URL dinámica para el archivo de servicios (Render o Local)
+const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
 // 2. Función para enviar la orden al API Gateway
 export const createOrder = async (payload: CreateOrderPayload) => {
   try {
-    const response = await fetch('http://localhost:3001/orders', {
+    const response = await fetch(`${baseUrl}/orders`, { // 👈 Cambiado a plantilla dinámica
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -29,12 +32,11 @@ export const createOrder = async (payload: CreateOrderPayload) => {
     console.error('Error en el servicio de órdenes:', error.message);
     throw error;
   }
-  
 };
 
 export const getOrders = async () => {
   try {
-    const response = await fetch('http://localhost:3001/orders', {
+    const response = await fetch(`${baseUrl}/orders`, { // 👈 Cambiado a plantilla dinámica
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

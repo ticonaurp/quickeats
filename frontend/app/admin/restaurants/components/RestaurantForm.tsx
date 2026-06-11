@@ -32,6 +32,9 @@ export function RestaurantForm() {
     image: '', // 👈 Inicializado vacío
   });
 
+  // 🌐 Base URL dinámica para el componente (Render o Local)
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
   // 2. Traer data real del Gateway si estamos en modo Edición
   useEffect(() => {
     setMounted(true);
@@ -39,7 +42,7 @@ export function RestaurantForm() {
     if (isEdit && id) {
       const loadRestaurantData = async () => {
         try {
-          const response = await fetch(`http://localhost:3001/restaurants/${id}`);
+          const response = await fetch(`${baseUrl}/restaurants/${id}`); // 👈 Cambiado
           if (response.ok) {
             const existing = await response.json();
             setForm({
@@ -63,7 +66,7 @@ export function RestaurantForm() {
 
       loadRestaurantData();
     }
-  }, [isEdit, id]);
+  }, [isEdit, id, baseUrl]);
 
   const handleValueChange = (field: string, value: string | boolean) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -90,8 +93,8 @@ export function RestaurantForm() {
     try {
       // Determinamos si es un POST (Crear) o PATCH (Editar, estándar en NestJS)
       const url = isEdit 
-        ? `http://localhost:3001/restaurants/${id}` 
-        : 'http://localhost:3001/restaurants';
+        ? `${baseUrl}/restaurants/${id}` // 👈 Cambiado
+        : `${baseUrl}/restaurants`; // 👈 Cambiado
         
       const method = isEdit ? 'PATCH' : 'POST';
 
