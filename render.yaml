@@ -1,0 +1,80 @@
+services:
+  # 1. FRONTEND 
+  - type: web
+    name: quickeats-frontend-staging
+    env: docker
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: .
+    plan: free
+    region: ohio
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        value: https://quickeats-gateway-staging.onrender.com
+
+  # 2. API GATEWAY
+  - type: web
+    name: quickeats-gateway-staging
+    env: docker
+    dockerfilePath: ./gateway/Dockerfile
+    dockerContext: .
+    plan: free
+    region: ohio
+    envVars:
+      - key: FRONTEND_URL
+        value: https://quickeats-frontend-staging.onrender.com
+      - key: AUTH_SERVICE_URL
+        value: http://quickeats-auth-service-staging:3002
+      - key: RESTAURANT_SERVICE_URL
+        value: http://quickeats-restaurant-service-staging:3003
+      - key: ORDER_SERVICE_URL
+        value: http://quickeats-order-service-staging:3004
+      - key: NOTIFICATION_SERVICE_URL
+        value: http://quickeats-notification-service-staging:3005
+
+  # 3. AUTH SERVICE
+  - type: pservice
+    name: quickeats-auth-service-staging
+    env: docker
+    dockerfilePath: ./auth-service/Dockerfile
+    dockerContext: .
+    plan: free
+    region: ohio
+    envVars:
+      - key: PORT
+        value: 3002
+
+  # 4. RESTAURANT SERVICE 
+  - type: pservice
+    name: quickeats-restaurant-service-staging
+    env: docker
+    dockerfilePath: ./restaurant-service/Dockerfile
+    dockerContext: .
+    plan: free
+    region: ohio
+    envVars:
+      - key: PORT
+        value: 3003
+
+  # 5. ORDER SERVICE 
+  - type: pservice
+    name: quickeats-order-service-staging
+    env: docker
+    dockerfilePath: ./order-service/Dockerfile
+    dockerContext: .
+    plan: free
+    region: ohio
+    envVars:
+      - key: PORT
+        value: 3004
+
+  # 6. NOTIFICATION SERVICE 
+  - type: pservice
+    name: quickeats-notification-service-staging
+    env: docker
+    dockerfilePath: ./notification-service/Dockerfile
+    dockerContext: .
+    plan: free
+    region: ohio
+    envVars:
+      - key: PORT
+        value: 3005

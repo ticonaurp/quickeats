@@ -6,7 +6,7 @@ async function bootstrap() {
 
   // Habilitamos CORS para que tu Frontend (puerto 3000) pueda leer las respuestas
   app.enableCors({
-    origin: 'http://localhost:3000', 
+    origin: process.env.FRONTEND_URL ?? 'http://localhost:3000', 
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
