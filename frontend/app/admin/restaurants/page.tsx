@@ -28,13 +28,16 @@ export default function RestaurantsPage() {
   const [loading, setLoading] = useState(true); 
   const [error, setError] = useState<string | null>(null); 
 
+  // 🌐 Base URL dinámica para el componente (Render o Local)
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
   useEffect(() => {
     setMounted(true);
 
     const loadRestaurants = async () => {
       try {
         setError(null); 
-        const response = await fetch('http://localhost:3001/restaurants');
+        const response = await fetch(`${baseUrl}/restaurants`); // 👈 Cambiado
         
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
@@ -81,7 +84,7 @@ export default function RestaurantsPage() {
     };
 
     loadRestaurants();
-  }, []);
+  }, [baseUrl]); // 👈 Añadido baseUrl a las dependencias
 
   const filtered = restaurants.filter(r =>
     !search || 

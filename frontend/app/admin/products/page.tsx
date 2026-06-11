@@ -42,14 +42,17 @@ export default function ProductManagementPage() {
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
+  // 🌐 Base URL dinámica para todo el componente (Render o Local)
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
   // 🔍 Carga sincronizada desde el Gateway
   useEffect(() => {
     const loadDashboardData = async () => {
       try {
         setLoading(true);
         const [productsRes, restaurantsRes] = await Promise.all([
-          fetch('http://localhost:3001/products'),
-          fetch('http://localhost:3001/restaurants')
+          fetch(`${baseUrl}/products`), // 👈 Cambiado
+          fetch(`${baseUrl}/restaurants`) // 👈 Cambiado
         ]);
 
         if (!productsRes.ok) throw new Error(`Productos falló: ${productsRes.status}`);
@@ -69,7 +72,7 @@ export default function ProductManagementPage() {
     };
 
     loadDashboardData();
-  }, []);
+  }, [baseUrl]);
 
   // 📊 Filtrado dinámico en memoria
   const filtered = products.filter((p) => {
@@ -82,7 +85,7 @@ export default function ProductManagementPage() {
   const handleDeleteConfirm = async () => {
     if (!deleteId) return;
     try {
-      const response = await fetch(`http://localhost:3001/products/${deleteId}`, {
+      const response = await fetch(`${baseUrl}/products/${deleteId}`, { // 👈 Cambiado
         method: 'DELETE',
       });
 
@@ -107,7 +110,7 @@ export default function ProductManagementPage() {
     const updatedAvailable = !targetProduct.isAvailable;
 
     try {
-      const response = await fetch(`http://localhost:3001/products/${id}`, {
+      const response = await fetch(`${baseUrl}/products/${id}`, { // 👈 Cambiado
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

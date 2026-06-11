@@ -3,8 +3,11 @@ import { type Response } from 'express';
 
 @Controller('notifications') // http://localhost:3001/notifications
 export class NotificationController {
-  // Apuntamos al microservicio de notificaciones que ya dejamos operativo en el 3005
-  private readonly NOTIFICATION_SERVICE_URL = 'http://localhost:3005/notifications';
+  // 🌐 CLAVE DE INFRAESTRUCTURA:
+  // Leemos la URL asignada por Render. Si no existe (como en tu entorno local), usa el fallback habitual.
+  private readonly NOTIFICATION_SERVICE_URL = process.env.NOTIFICATION_SERVICE_URL
+    ? `${process.env.NOTIFICATION_SERVICE_URL}/notifications`
+    : 'http://localhost:3005/notifications';
 
   @Post()
   async createNotification(@Body() body: any, @Res() res: Response) {
