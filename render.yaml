@@ -23,16 +23,16 @@ services:
       - key: FRONTEND_URL
         value: https://quickeats-frontend-staging.onrender.com
       - key: AUTH_SERVICE_URL
-        value: http://quickeats-auth-service-staging:3002
+        value: https://quickeats-auth-service-staging.onrender.com
       - key: RESTAURANT_SERVICE_URL
-        value: http://quickeats-restaurant-service-staging:3003
+        value: https://quickeats-restaurant-service-staging.onrender.com
       - key: ORDER_SERVICE_URL
-        value: http://quickeats-order-service-staging:3004
+        value: https://quickeats-order-service-staging.onrender.com
       - key: NOTIFICATION_SERVICE_URL
-        value: http://quickeats-notification-service-staging:3005
+        value: https://quickeats-notification-service-staging.onrender.com
 
   # 3. AUTH SERVICE
-  - type: private 
+  - type: web 
     name: quickeats-auth-service-staging
     env: docker
     dockerfilePath: ./auth-service/Dockerfile
@@ -44,7 +44,7 @@ services:
         value: 3002
 
   # 4. RESTAURANT SERVICE 
-  - type: private
+  - type: web 
     name: quickeats-restaurant-service-staging
     env: docker
     dockerfilePath: ./restaurant-service/Dockerfile
@@ -56,7 +56,7 @@ services:
         value: 3003
 
   # 5. ORDER SERVICE 
-  - type: private 
+  - type: web 
     name: quickeats-order-service-staging
     env: docker
     dockerfilePath: ./order-service/Dockerfile
@@ -68,7 +68,7 @@ services:
         value: 3004
 
   # 6. NOTIFICATION SERVICE 
-  - type: private 
+  - type: web 
     name: quickeats-notification-service-staging
     env: docker
     dockerfilePath: ./notification-service/Dockerfile
