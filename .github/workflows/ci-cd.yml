@@ -18,10 +18,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
 
-      - name: Instalar Dependencias de la Raíz
-        run: npm install
 
       - name: Validar Ecosistema Completo
         run: |
@@ -51,7 +48,7 @@ jobs:
     steps:
       - name: Disparar Deploy Hooks en Render
         run: |
-          echo "CI Aprobada. Solicitando actualización de infraestructura a Render"
+          echo "CI Aprobada. Solicitando actualización de infraestructura a Render..."
           curl -X POST "${{ secrets.RENDER_FRONTEND_HOOK }}"
           curl -X POST "${{ secrets.RENDER_GATEWAY_HOOK }}"
           curl -X POST "${{ secrets.RENDER_AUTH_HOOK }}"
