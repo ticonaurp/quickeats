@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useSearchParams } from 'next/navigation'; // Hook para leer la URL
 import { createOrder } from '@/app/services/order.service';
+import { getUserId } from '@/app/services/auth';
 
 export default function CheckoutScreen() {
   const searchParams = useSearchParams();
@@ -12,8 +13,8 @@ export default function CheckoutScreen() {
   const productName = searchParams.get('name') || 'Producto seleccionado';
   const productPrice = parseFloat(searchParams.get('price') || '0');
 
-  // TODO: Conectar con tu sistema de Auth real. Por ahora dejamos el ID fijo.
-  const userId = 'user-test-123'; 
+  // 🔐 Obtenemos el id del usuario autenticado a partir del token JWT
+  const userId = getUserId();
 
   const [quantity, setQuantity] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(false);
@@ -23,6 +24,12 @@ export default function CheckoutScreen() {
   const handleConfirmOrder = async () => {
     if (!productId) {
       setErrorMessage('No se ha seleccionado ningún producto válido.');
+      return;
+    }
+
+    // 🔐 Sin sesión activa no podemos asociar la orden a un usuario
+    if (!userId) {
+      setErrorMessage('Tu sesión expiró. Por favor, inicia sesión nuevamente.');
       return;
     }
 

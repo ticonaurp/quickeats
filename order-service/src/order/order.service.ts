@@ -4,8 +4,8 @@ import { PrismaService } from '../prisma.service';
 
 @Injectable()
 export class OrderService {
-  // 🎯 Apuntamos al endpoint que lista todo en el puerto correcto 3003
-  private readonly RESTAURANT_SERVICE_URL = 'http://localhost:3003/products'; 
+  // 🟢 Usamos el DNS interno de Docker (no localhost) para alcanzar al restaurant-service
+  private readonly RESTAURANT_SERVICE_URL = `${process.env.RESTAURANT_SERVICE_URL || 'http://restaurant-service:3003'}/products`;
 
   constructor(private readonly prisma: PrismaService) {}
 
@@ -40,6 +40,14 @@ export class OrderService {
 
   async findAll() {
     return this.prisma.order.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  // 👤 Devuelve únicamente las órdenes que pertenecen al usuario indicado
+  async findByUser(userId: string) {
+    return this.prisma.order.findMany({
+      where: { userId },
       orderBy: { createdAt: 'desc' },
     });
   }

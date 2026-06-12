@@ -1,11 +1,29 @@
 "use client";
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { LayoutGrid, Store, Package, ClipboardList, LogOut, ChevronLeft } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { LayoutGrid, Store, Package, ClipboardList, LogOut } from 'lucide-react';
+import { toast } from 'sonner';
+import { getUserEmail } from '@/app/services/auth';
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [email, setEmail] = useState<string>('admin@quickeats.com');
+
+  // Mostramos el email real del administrador que tiene la sesión activa
+  useEffect(() => {
+    const current = getUserEmail();
+    if (current) setEmail(current);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    toast.success('Sesión cerrada con éxito. ¡Vuelve pronto!');
+    router.push('/login');
+  };
 
   const menuItems = [
     { label: 'Panel de Control', icon: LayoutGrid, href: '/admin' },
@@ -27,7 +45,7 @@ export function Sidebar() {
 
         <div className="bg-green-50/60 rounded-xl p-3 border border-green-100/50">
           <p className="text-xs font-bold text-green-800">Panel Admin</p>
-          <p className="text-xs text-green-600 truncate">admin@quickeats.com</p>
+          <p className="text-xs text-green-600 truncate">{email}</p>
         </div>
 
         {/* Navegación */}
@@ -55,7 +73,10 @@ export function Sidebar() {
 
       {/* Bottom: Acciones de salida */}
       <div className="border-t border-gray-100 pt-4 space-y-1">
-        <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition-colors">
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"
+        >
           <LogOut size={18} />
           Cerrar Sesión
         </button>

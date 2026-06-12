@@ -93,7 +93,10 @@ export default function UserDashboard() {
               <h3 className="text-lg font-bold text-gray-800 mb-1">Mis Pedidos</h3>
               <p className="text-gray-500 text-sm">Revisa el estado de tus órdenes en tiempo real y tu historial.</p>
             </div>
-            <button className="mt-6 text-sm font-semibold text-green-600 hover:text-green-700 text-left">
+            <button
+              onClick={() => router.push('/orders')}
+              className="mt-6 text-sm font-semibold text-green-600 hover:text-green-700 text-left"
+            >
               Ver pedidos →
             </button>
           </div>

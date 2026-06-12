@@ -43,10 +43,51 @@ export const getOrders = async () => {
 
     const data = await response.json();
     if (!response.ok) throw new Error(data.message || 'Error al obtener el historial');
-    
+
     return data; // Devuelve el array de órdenes
   } catch (error: any) {
     console.error('Error en getOrders:', error.message);
+    throw error;
+  }
+};
+
+// 🔄 Actualiza el estado de una orden (usado por el panel de administrador)
+export const updateOrderStatus = async (orderId: string, status: string) => {
+  try {
+    const response = await fetch(`http://localhost:3001/orders/${orderId}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ status }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Error al actualizar el estado');
+
+    return data; // Devuelve la orden ya actualizada
+  } catch (error: any) {
+    console.error('Error en updateOrderStatus:', error.message);
+    throw error;
+  }
+};
+
+// 👤 Obtiene únicamente las órdenes del usuario autenticado
+export const getOrdersByUser = async (userId: string) => {
+  try {
+    const response = await fetch(`http://localhost:3001/orders/user/${userId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Error al obtener el historial');
+
+    return data; // Devuelve el array de órdenes del usuario
+  } catch (error: any) {
+    console.error('Error en getOrdersByUser:', error.message);
     throw error;
   }
 };
