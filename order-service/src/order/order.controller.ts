@@ -17,6 +17,12 @@ export class OrderController {
     return this.orderService.findAll();
   }
 
+  // 👤 Lista solo las órdenes del usuario autenticado (/orders/user/:userId)
+  @Get('user/:userId')
+  findByUser(@Param('userId') userId: string) {
+    return this.orderService.findByUser(userId);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.orderService.findOne(id);

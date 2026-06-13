@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { getOrders } from '@/app/services/order.service';
+import { getOrdersByUser } from '@/app/services/order.service';
+import { getUserId } from '@/app/services/auth';
 
 interface Order {
   id: string;
@@ -20,7 +21,14 @@ export default function OrdersHistoryScreen() {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const data = await getOrders();
+        // 🔐 Solo pedimos las órdenes del usuario que tiene la sesión activa
+        const userId = getUserId();
+        if (!userId) {
+          setError('Tu sesión expiró. Por favor, inicia sesión nuevamente.');
+          return;
+        }
+
+        const data = await getOrdersByUser(userId);
         setOrders(data);
       } catch (err: any) {
         setError(err.message);

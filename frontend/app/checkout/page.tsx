@@ -3,6 +3,7 @@
 import React, { useState, Suspense } from 'react'; // 👈 Importamos Suspense de React
 import { useSearchParams } from 'next/navigation'; 
 import { createOrder } from '@/app/services/order.service';
+import { getUserId } from '@/app/services/auth';
 
 // 1. Convertimos tu componente original en un subcomponente interno
 function CheckoutContent() {
@@ -13,8 +14,8 @@ function CheckoutContent() {
   const productName = searchParams.get('name') || 'Producto seleccionado';
   const productPrice = parseFloat(searchParams.get('price') || '0');
 
-  // TODO: Conectar con tu sistema de Auth real. Por ahora dejamos el ID fijo.
-  const userId = 'user-test-123'; 
+  // 🔐 Obtenemos el id del usuario autenticado a partir del token JWT
+  const userId = getUserId();
 
   const [quantity, setQuantity] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(false);
@@ -27,7 +28,13 @@ function CheckoutContent() {
       return;
     }
 
-    loading && setLoading(true);
+    // 🔐 Sin sesión activa no podemos asociar la orden a un usuario
+    if (!userId) {
+      setErrorMessage('Tu sesión expiró. Por favor, inicia sesión nuevamente.');
+      return;
+    }
+
+    setLoading(true);
     setErrorMessage(null);
 
     try {
