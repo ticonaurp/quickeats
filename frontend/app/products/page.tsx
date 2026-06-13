@@ -20,11 +20,14 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 🔄 Consumimos el catálogo de productos a través del Gateway (3001)
+  // 🌐 Base URL dinámica para el componente (Render o Local)
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+  // 🔄 Consumimos el catálogo de productos a través del Gateway
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await fetch('http://localhost:3001/products');
+        const response = await fetch(`${baseUrl}/products`); // 👈 Cambiado a plantilla dinámica
         
         if (!response.ok) {
           throw new Error('No se pudo cargar el catálogo de productos');
@@ -40,7 +43,7 @@ export default function ProductsPage() {
     };
 
     fetchProducts();
-  }, []);
+  }, [baseUrl]); // 👈 Añadido baseUrl a las dependencias
 
   // 🚀 Navegación dinámica hacia la pantalla de Checkout enviando Query Params
   const handleBuyClick = (product: Product) => {

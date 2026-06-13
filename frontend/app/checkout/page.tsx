@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useSearchParams } from 'next/navigation'; // Hook para leer la URL
+import React, { useState, Suspense } from 'react'; // 👈 Importamos Suspense de React
+import { useSearchParams } from 'next/navigation'; 
 import { createOrder } from '@/app/services/order.service';
 import { getUserId } from '@/app/services/auth';
 
-export default function CheckoutScreen() {
+// 1. Convertimos tu componente original en un subcomponente interno
+function CheckoutContent() {
   const searchParams = useSearchParams();
 
   // 🎯 Capturamos los datos dinámicos desde la URL
@@ -100,6 +101,19 @@ export default function CheckoutScreen() {
         {loading ? 'Procesando...' : 'Confirmar Pedido 🛒'}
       </button>
     </div>
+  );
+}
+
+// 2. El export por defecto ahora envuelve el contenido protegiendo el prerendering
+export default function CheckoutScreen() {
+  return (
+    <Suspense fallback={
+      <div style={{ padding: '40px', textAlign: 'center', color: '#fff', fontFamily: 'sans-serif' }}>
+        <h3>Cargando resumen de la orden...</h3>
+      </div>
+    }>
+      <CheckoutContent />
+    </Suspense>
   );
 }
 

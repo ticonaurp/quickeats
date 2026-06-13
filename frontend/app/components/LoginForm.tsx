@@ -16,7 +16,11 @@ export function LoginForm() {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3001/auth/login', {
+      // 🌐 Obtenemos la URL del API Gateway de forma dinámica
+      // Si estás en producción, usará la URL de Render. Si estás en local, usará localhost:3001
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+      const response = await fetch(`${baseUrl}/auth/login`, { // 👈 Cambiado a plantilla dinámica
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -36,7 +40,7 @@ export function LoginForm() {
         if (data.role === 'ADMIN') {
           router.push('/admin'); 
         } else {
-          router.push('/user'); // 🍔 Te redirige de forma segura a http://localhost:3000/user
+          router.push('/user'); // 🍔 Te redirige de forma segura
         }
       } else {
         toast.error(data.message || 'Error al iniciar sesión. Revisa tus credenciales.');
@@ -63,7 +67,6 @@ export function LoginForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="tu@ejemplo.com"
-            // 🎯 Agregamos 'text-black' para forzar las letras a color negro
             className="w-full pl-12 pr-4 py-3.5 border border-gray-200 rounded-xl text-base text-black focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all bg-white placeholder-gray-500 disabled:opacity-60"
           />
         </div>
@@ -84,7 +87,6 @@ export function LoginForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
-            // 🎯 Agregamos 'text-black' aquí también para forzar el texto a negro
             className="w-full pl-12 pr-12 py-3.5 border border-gray-200 rounded-xl text-base text-black focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all bg-white placeholder-gray-500 disabled:opacity-60"
           />
           <button 

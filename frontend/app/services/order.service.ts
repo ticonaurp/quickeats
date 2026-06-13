@@ -5,10 +5,13 @@ export interface CreateOrderPayload {
   quantity: number;
 }
 
+// 🌐 Base URL dinámica para el archivo de servicios (Render o Local)
+const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
 // 2. Función para enviar la orden al API Gateway
 export const createOrder = async (payload: CreateOrderPayload) => {
   try {
-    const response = await fetch('http://localhost:3001/orders', {
+    const response = await fetch(`${baseUrl}/orders`, { // 👈 Cambiado a plantilla dinámica
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -29,12 +32,11 @@ export const createOrder = async (payload: CreateOrderPayload) => {
     console.error('Error en el servicio de órdenes:', error.message);
     throw error;
   }
-  
 };
 
 export const getOrders = async () => {
   try {
-    const response = await fetch('http://localhost:3001/orders', {
+    const response = await fetch(`${baseUrl}/orders`, { // 👈 Cambiado a plantilla dinámica
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -54,7 +56,7 @@ export const getOrders = async () => {
 // 🔄 Actualiza el estado de una orden (usado por el panel de administrador)
 export const updateOrderStatus = async (orderId: string, status: string) => {
   try {
-    const response = await fetch(`http://localhost:3001/orders/${orderId}/status`, {
+    const response = await fetch(`${baseUrl}/orders/${orderId}/status`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -75,7 +77,7 @@ export const updateOrderStatus = async (orderId: string, status: string) => {
 // 👤 Obtiene únicamente las órdenes del usuario autenticado
 export const getOrdersByUser = async (userId: string) => {
   try {
-    const response = await fetch(`http://localhost:3001/orders/user/${userId}`, {
+    const response = await fetch(`${baseUrl}/orders/user/${userId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

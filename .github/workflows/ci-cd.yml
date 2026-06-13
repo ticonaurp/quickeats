@@ -1,0 +1,56 @@
+name: QuickEats Monorepo CI-CD
+
+on:
+  push:
+    branches: [ develop ]
+  pull_request:
+    branches: [ develop ]
+
+jobs:
+  # ETAPA 1: INTEGRACIÓN CONTINUA (CI) 
+  build-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar Código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js v20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Validar Ecosistema Completo
+        run: |
+          echo "Validando Gateway..."
+          cd gateway && npm install && npm run build --if-present
+          
+          echo "Validando Auth Service..."
+          cd ../auth-service && npm install && npx prisma generate && npm run build --if-present
+          
+          echo "Validando Restaurant Service..."
+          cd ../restaurant-service && npm install && npx prisma generate && npm run build --if-present
+          
+          echo "Validando Order Service..."
+          cd ../order-service && npm install && npx prisma generate && npm run build --if-present
+          
+          echo "Validando Notification Service..."
+          cd ../notification-service && npm install && npx prisma generate && npm run build --if-present
+          
+          echo "Validando Frontend..."
+          cd ../frontend && npm install && npm run build --if-present
+
+  # ETAPA 2: DESPLIEGUE CONTINUO (CD) 
+  deploy-to-staging:
+    needs: build-and-validate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Disparar Deploy Hooks en Render
+        run: |
+          echo "CI Aprobada. Solicitando actualización de infraestructura a Render..."
+          curl -X POST "${{ secrets.RENDER_FRONTEND_HOOK }}"
+          curl -X POST "${{ secrets.RENDER_GATEWAY_HOOK }}"
+          curl -X POST "${{ secrets.RENDER_AUTH_HOOK }}"
+          curl -X POST "${{ secrets.RENDER_RESTAURANT_HOOK }}"
+          curl -X POST "${{ secrets.RENDER_ORDER_HOOK }}"
+          curl -X POST "${{ secrets.RENDER_NOTIFICATION_HOOK }}"

@@ -36,6 +36,9 @@ export default function EditProductPage() {
   const [isAvailable, setIsAvailable] = useState(true);
   const [isPopular, setIsPopular] = useState(false);
 
+  // 🌐 Base URL dinámica para el componente (Render o Local)
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
   // 🔍 CARGA PARALELA: Datos del producto actual + Lista de restaurantes
   useEffect(() => {
     if (!productId) return;
@@ -44,8 +47,8 @@ export default function EditProductPage() {
       try {
         setLoading(true);
         const [productRes, restaurantsRes] = await Promise.all([
-          fetch(`http://localhost:3001/products/${productId}`),
-          fetch('http://localhost:3001/restaurants')
+          fetch(`${baseUrl}/products/${productId}`), // 👈 Cambiado
+          fetch(`${baseUrl}/restaurants`) // 👈 Cambiado
         ]);
 
         if (!productRes.ok) throw new Error('No se pudo cargar el producto');
@@ -77,7 +80,7 @@ export default function EditProductPage() {
     };
 
     loadData();
-  }, [productId, router]);
+  }, [productId, router, baseUrl]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,7 +92,7 @@ export default function EditProductPage() {
 
     setSaving(true);
     try {
-      const response = await fetch(`http://localhost:3001/products/${productId}`, {
+      const response = await fetch(`${baseUrl}/products/${productId}`, { // 👈 Cambiado
         method: 'PUT', // Persistencia mediante actualización total DTO
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -135,7 +138,7 @@ export default function EditProductPage() {
       {/* 📊 BARRA LATERAL FIJA DE QUICKEATS */}
       <Sidebar />
 
-      {/* 🏢 ÁREA CENTRAL DE TRABAJO EN TOTAL BLANCO/GRIS (ADIÓS BARRAS NEGRAS) */}
+      {/* 🏢 ÁREA CENTRAL DE TRABAJO EN TOTAL BLANCO/GRIS */}
       <main className="flex-1 p-6 sm:p-8 max-w-5xl space-y-6 overflow-y-auto">
         
         {/* Link superior de retorno */}
@@ -210,7 +213,6 @@ export default function EditProductPage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Desplegable en Español idéntico a Creación */}
               <div>
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Categoría *</label>
                 <div className="relative">
@@ -259,7 +261,7 @@ export default function EditProductPage() {
             </div>
           </FormCard>
 
-          {/* Card 3: Precio en Soles Peruanos */}
+          {/* Card 3: Precio */}
           <FormCard title="Precio" icon={<DollarSign size={15} />}>
             <div className="max-w-xs">
               <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Precio (S/.) *</label>
@@ -288,7 +290,7 @@ export default function EditProductPage() {
             </div>
           </FormCard>
 
-          {/* Card 5: Visibilidad mediante ToggleSwitches */}
+          {/* Card 5: Visibilidad */}
           <FormCard title="Visibilidad" icon={<Eye size={15} />}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <ToggleSwitch 

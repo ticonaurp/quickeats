@@ -3,7 +3,7 @@ import { type Response } from 'express';
 
 @Controller('orders') // http://localhost:3001/orders
 export class OrderController {
-  // 🟢 Leemos la URL del .env (red interna de Docker). Fallback al DNS del contenedor.
+  // 🟢 Leemos la URL del .env. En Render viene seteada; en Docker local usamos el DNS del contenedor.
   private readonly ORDER_SERVICE_URL = `${process.env.ORDER_SERVICE_URL || 'http://order-service:3004'}/orders`;
 
   @Post()

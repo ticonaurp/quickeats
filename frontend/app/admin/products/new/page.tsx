@@ -32,11 +32,14 @@ export default function NewProductPage() {
   const [isAvailable, setIsAvailable] = useState(true);
   const [isPopular, setIsPopular] = useState(false);
 
+  // 🌐 Base URL dinámica para el componente (Render o Local)
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
   // Sincronización de restaurantes desde el Gateway
   useEffect(() => {
     const fetchRestaurants = async () => {
       try {
-        const res = await fetch('http://localhost:3001/restaurants');
+        const res = await fetch(`${baseUrl}/restaurants`); // 👈 Cambiado
         if (res.ok) {
           const data = await res.json();
           setRestaurants(data);
@@ -46,7 +49,7 @@ export default function NewProductPage() {
       }
     };
     fetchRestaurants();
-  }, []);
+  }, [baseUrl]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,7 +61,7 @@ export default function NewProductPage() {
 
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:3001/products', {
+      const response = await fetch(`${baseUrl}/products`, { // 👈 Cambiado
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -168,7 +171,6 @@ export default function NewProductPage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* ⚡ CAMBIADO A SELECT DESPLEGABLE EN ESPAÑOL */}
               <div>
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Categoría *</label>
                 <div className="relative">
@@ -217,7 +219,7 @@ export default function NewProductPage() {
             </div>
           </FormCard>
 
-          {/* Card 3: Precio en Soles */}
+          {/* Card 3: Precio */}
           <FormCard title="Precio" icon={<DollarSign size={15} />}>
             <div className="max-w-xs">
               <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Precio (S/.) *</label>
@@ -246,7 +248,7 @@ export default function NewProductPage() {
             </div>
           </FormCard>
 
-          {/* Card 5: Visibilidad en Grilla de 2 Columnas */}
+          {/* Card 5: Visibilidad */}
           <FormCard title="Visibilidad" icon={<Eye size={15} />}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <ToggleSwitch 
