@@ -35,6 +35,9 @@ const STATUS_META: Record<string, { label: string; color: string; bg: string }> 
 
 const STATUS_LIST = ['PENDING', 'PREPARING', 'DELIVERING', 'DELIVERED', 'CANCELLED'];
 
+// 🌐 Base URL dinámica: en Render usa NEXT_PUBLIC_API_URL, en local cae al gateway local
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('es-PE', {
     day: 'numeric',
@@ -65,7 +68,7 @@ export default function AdminOrdersPage() {
         // 🔄 Pedimos las órdenes y el catálogo de productos en paralelo
         const [ordersData, productsRes] = await Promise.all([
           getOrders(),
-          fetch('http://localhost:3001/products').then((r) => r.json()),
+          fetch(`${API_URL}/products`).then((r) => r.json()),
         ]);
 
         // Construimos un diccionario productId -> producto para buscar nombre y precio
