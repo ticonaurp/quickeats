@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # 🗄️ La Base de Datos Local (Puerto externo 5433 para liberar el 5432)
+  # La Base de Datos Local (Puerto externo 5433 para liberar el 5432)
   postgres_db:
     image: postgres:15-alpine
     container_name: quickeats_postgres
@@ -16,7 +16,7 @@ services:
     networks:
       - quickeats_network
 
-  # 🏛️ API Gateway (Puerto 3001)
+  # API Gateway (Puerto 3001)
   gateway:
     build:
       context: ./gateway
@@ -34,7 +34,7 @@ services:
     networks:
       - quickeats_network
 
-  # 🔐 Auth Service (Puerto 3002 - Conectado a Supabase)
+  # Auth Service (Puerto 3002 - Conectado a Supabase)
   auth-service:
     build:
       context: ./auth-service
@@ -49,7 +49,7 @@ services:
     networks:
       - quickeats_network
 
-  # 🍔 Restaurant Service (Puerto 3003 - Modo Desarrollo Vivo)
+  # Restaurant Service (Puerto 3003 - Modo Desarrollo Vivo)
   restaurant-service:
     build:
       context: ./restaurant-service
@@ -69,7 +69,7 @@ services:
     networks:
       - quickeats_network
 
-  # 🛒 Order Service (Puerto 3004 - Modo Desarrollo Vivo)
+  # Order Service (Puerto 3004 - Modo Desarrollo Vivo)
   order-service:
     build:
       context: ./order-service
@@ -89,7 +89,7 @@ services:
     networks:
       - quickeats_network
 
-  # 🔔 Notification Service (Puerto 3005 - Modo Desarrollo Vivo)
+  # Notification Service (Puerto 3005 - Modo Desarrollo Vivo)
   notification-service:
     build:
       context: ./notification-service
