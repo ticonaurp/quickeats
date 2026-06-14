@@ -1,135 +1,121 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { LogOut, User, ShoppingBag, MapPin, Search, Pizza } from 'lucide-react';
-import { toast } from 'sonner';
+import { Search } from 'lucide-react';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation'; // 🟢 1. Importar el enrutador nativo
+import { LOCAL_CATEGORIES, RESTAURANTS_MOCK } from '../data/mockData';
+import TopNavbar from '../components/TopNavbar';
+import RestaurantCard from '../components/shared/RestaurantCard';
+import ExpressDeliveryCarousel from '../components/home/ExpressDeliveryCarousel';
+import HowItWorksBanner from '../components/home/HowItWorksBanner';
 
-export default function UserDashboard() {
-  const router = useRouter();
-  const [userRole, setUserRole] = useState<string | null>(null);
+export default function UserPage() {
+  const [search, setSearch] = useState('');
+  const [activeCategory, setActiveCategory] = useState('all');
+  const router = useRouter(); // 🟢 2. Inicializar el enrutador
 
-  useEffect(() => {
-    // Verificar si el usuario está autenticado en el navegador
-    const token = localStorage.getItem('token');
-    const role = localStorage.getItem('role');
+  const filtered = RESTAURANTS_MOCK.filter(r => {
+    const q = search.toLowerCase();
+    const matchSearch = !q || r.name.toLowerCase().includes(q) || r.cuisine.toLowerCase().includes(q);
+    const matchCat = activeCategory === 'all' || r.category === activeCategory;
+    return matchSearch && matchCat;
+  });
 
-    if (!token) {
-      toast.error('Acceso denegado. Por favor, inicia sesión.');
-      router.push('/login');
-    } else {
-      setUserRole(role);
-    }
-  }, [router]);
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    toast.success('Sesión cerrada con éxito. ¡Vuelve pronto!');
-    router.push('/login');
-  };
+  const openRestaurants = filtered.filter(r => r.isOpen);
+  const closedRestaurants = filtered.filter(r => !r.isOpen);
+  const expressRestaurants = openRestaurants.filter(r => parseInt(r.deliveryTime) <= 25);
 
   return (
-    <div className="min-h-screen bg-gray-50 text-black">
-      {/* Navbar Superior */}
-      <nav className="bg-white border-b border-gray-100 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-green-500 rounded-xl text-white">
-              <Pizza size={22} />
-            </div>
-            <span className="font-bold text-xl tracking-tight bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent">
-              QuickEats
-            </span>
-          </div>
+    <div className="min-h-screen bg-[#F8FAFC] font-sans antialiased">
+      <TopNavbar />
 
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-xl text-sm font-medium text-gray-700">
-              <User size={16} className="text-gray-500" />
-              <span>Rol: {userRole || 'USER'}</span>
-            </div>
-            
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-sm font-semibold transition-all"
-            >
-              <LogOut size={16} />
-              Cerrar Sesión
-            </button>
+      {/* Header Hero */}
+      <div className="bg-gradient-to-br from-[#22C55E] to-[#16A34A] px-6 pt-12 pb-16">
+        <div className="max-w-[1440px] mx-auto">
+          <div className="mb-6">
+            <p className="text-green-50/90 text-[0.875rem]">Hola, <span className="text-white font-bold">Alex</span> 👋</p>
+            <h1 className="text-white mt-1 font-extrabold text-[1.75rem] sm:text-[2.3rem] tracking-tight leading-none">¿Qué vas a pedir hoy?</h1>
+          </div>
+          <div className="w-full max-w-2xl flex items-center gap-3 bg-white/20 border border-white/20 backdrop-blur-sm rounded-2xl px-4 py-3.5 focus-within:bg-white/25 focus-within:border-white transition-all">
+            <Search size={18} className="text-white/80 shrink-0" />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar restaurantes o comidas..." className="flex-1 bg-transparent outline-none text-white placeholder-white/70 text-[0.92rem]" />
+            {search && <button onClick={() => setSearch('')} className="text-white/80 hover:text-white text-xl">×</button>}
           </div>
         </div>
-      </nav>
+      </div>
 
-      {/* Contenido Principal */}
-      <main className="max-w-7xl mx-auto px-6 py-10">
-        {/* Encabezado de Bienvenida */}
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 -mt-7">
+        {/* Categorías */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-2">
-            ¡Hola de nuevo! 🍔
-          </h1>
-          <p className="text-gray-500 text-base">
-            ¿Qué se te antoja ordenar el día de hoy en QuickEats?
-          </p>
+          <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
+            {LOCAL_CATEGORIES.map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => setActiveCategory(cat.id)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl whitespace-nowrap transition-all shrink-0 border ${
+                  activeCategory === cat.id ? 'bg-[#22C55E] text-white border-[#22C55E]' : 'bg-white text-gray-600 border-gray-200 hover:border-[#22C55E]/40'
+                }`}
+                style={{ fontWeight: 600, fontSize: '0.85rem' }}
+              >
+                <span className="text-[1.1rem]">{cat.emoji}</span>
+                {cat.name}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Barra de Búsqueda Falsa (Estética) */}
-        <div className="relative max-w-xl mb-12">
-          <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Busca tus platillos o restaurantes favoritos..."
-            className="w-full pl-12 pr-4 py-3.5 border border-gray-200 rounded-2xl bg-white focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all text-sm placeholder-gray-400"
+        {/* 🟢 3. Redirección instalada en el Carrusel */}
+        {!search && activeCategory === 'all' && expressRestaurants.length > 0 && (
+          <ExpressDeliveryCarousel 
+            restaurants={expressRestaurants} 
+            onSelect={(id) => router.push(`/restaurants/${id}`)} 
           />
+        )}
+
+        {/* Catálogo de Restaurantes */}
+        <div className="mb-12">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="font-bold text-[#0F172A] text-[1.1rem] tracking-tight">{search ? `Resultados para "${search}"` : 'Todos los restaurantes'}</h2>
+            <span className="text-gray-400 text-[0.8rem] font-medium">{openRestaurants.length} disponibles</span>
+          </div>
+
+          {filtered.length === 0 ? (
+            <div className="text-center py-16 bg-white rounded-3xl border border-gray-100 shadow-sm">
+              <span className="text-3xl block mb-2">🍽️</span>
+              <p className="text-gray-700 font-bold">No encontramos resultados</p>
+            </div>
+          ) : (
+            <div className="space-y-9">
+              {/* 🟢 4. Redirección instalada en las Cards disponibles */}
+              {openRestaurants.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {openRestaurants.map(r => (
+                    <RestaurantCard 
+                      key={r.id} 
+                      r={r} 
+                      onClick={() => router.push(`/restaurants/${r.id}`)} 
+                    />
+                  ))}
+                </div>
+              )}
+              
+              {/* Cerrados (sin redirección por estar deshabilitados o hacia flujo controlado) */}
+              {closedRestaurants.length > 0 && (
+                <div className="pt-4">
+                  <p className="text-gray-400 text-[0.75rem] font-bold tracking-wider uppercase mb-4">Cerrados ahora</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {closedRestaurants.map(r => (
+                      <RestaurantCard key={r.id} r={r} onClick={() => {}} />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Grid de Secciones del Dashboard */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Card 1: Historial */}
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
-            <div>
-              <div className="w-12 h-12 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center mb-4">
-                <ShoppingBag size={24} />
-              </div>
-              <h3 className="text-lg font-bold text-gray-800 mb-1">Mis Pedidos</h3>
-              <p className="text-gray-500 text-sm">Revisa el estado de tus órdenes en tiempo real y tu historial.</p>
-            </div>
-            <button
-              onClick={() => router.push('/orders')}
-              className="mt-6 text-sm font-semibold text-green-600 hover:text-green-700 text-left"
-            >
-              Ver pedidos →
-            </button>
-          </div>
-
-          {/* Card 2: Direcciones */}
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
-            <div>
-              <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center mb-4">
-                <MapPin size={24} />
-              </div>
-              <h3 className="text-lg font-bold text-gray-800 mb-1">Mis Direcciones</h3>
-              <p className="text-gray-500 text-sm">Gestiona tus lugares de entrega frecuentes para pedidos rápidos.</p>
-            </div>
-            <button className="mt-6 text-sm font-semibold text-green-600 hover:text-green-700 text-left">
-              Configurar direcciones →
-            </button>
-          </div>
-
-          {/* Card 3: Perfil */}
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
-            <div>
-              <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-500 flex items-center justify-center mb-4">
-                <User size={24} />
-              </div>
-              <h3 className="text-lg font-bold text-gray-800 mb-1">Perfil de Usuario</h3>
-              <p className="text-gray-500 text-sm">Actualiza tus datos personales, contraseña y validaciones digitales.</p>
-            </div>
-            <button className="mt-6 text-sm font-semibold text-green-600 hover:text-green-700 text-left">
-              Editar perfil →
-            </button>
-          </div>
-        </div>
-      </main>
+        {!search && activeCategory === 'all' && <HowItWorksBanner />}
+      </div>
     </div>
   );
 }
