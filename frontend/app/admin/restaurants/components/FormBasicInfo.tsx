@@ -1,6 +1,7 @@
 "use client";
 
 import { Store } from 'lucide-react';
+import { LOCAL_CATEGORIES } from '../../../data/mockData';
 
 interface FormBasicInfoProps {
   name: string;
@@ -9,7 +10,8 @@ interface FormBasicInfoProps {
   onChange: (field: string, value: string) => void;
 }
 
-const CATEGORIES = ['Burgers', 'Pizza', 'Asiática', 'Italiana', 'Chifa', 'Pollerías', 'Saludable', 'Postres'];
+// 🛠️ Filtramos 'all' para que el admin solo elija categorías reales de comida
+const ADMIN_CATEGORIES = LOCAL_CATEGORIES.filter(cat => cat.id !== 'all');
 const inputClass = "w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-green-400 focus:ring-2 focus:ring-green-400/10 transition-all shadow-sm";
 
 export function FormBasicInfo({ name, description, category, onChange }: FormBasicInfoProps) {
@@ -57,7 +59,12 @@ export function FormBasicInfo({ name, description, category, onChange }: FormBas
             onChange={(e) => onChange('category', e.target.value)} 
             className={`${inputClass} cursor-pointer`}
           >
-            {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+            {/* 🔄 Mapeamos dinámicamente usando el name de la constante global */}
+            {ADMIN_CATEGORIES.map(c => (
+              <option key={c.id} value={c.name}>
+                {c.emoji} {c.name}
+              </option>
+            ))}
           </select>
         </div>
       </div>

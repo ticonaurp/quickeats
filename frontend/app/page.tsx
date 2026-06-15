@@ -1,18 +1,46 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Star, Clock, Bike, Shield, Smartphone, ChevronRight } from 'lucide-react';
-import { Navbar } from '../app/components/Navbar';
+import { ArrowRight, Clock, Bike, Shield, Smartphone, Zap, Lock } from 'lucide-react'; 
+import { Navbar } from './components/Navbar';
+import { fetchFromGateway } from './services/api';
+import { Restaurant } from './data/mockData';
 
 export default function Home() {
-  // Estado vacío por defecto hasta que conectemos con el backend
-  const featured: any[] = [];
+  const [featured, setFeatured] = useState<Restaurant[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadFeaturedRestaurants() {
+      try {
+        const data = await fetchFromGateway('/restaurants');
+        if (data && Array.isArray(data)) {
+          const featuredItems = data.filter((r: Restaurant) => r.isFeatured);
+          setFeatured(featuredItems.length > 0 ? featuredItems : data.slice(0, 3));
+        }
+      } catch (error) {
+        console.error("Error conectando con el Gateway desde la Landing Page:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadFeaturedRestaurants();
+
+    const interval = setInterval(() => {
+      loadFeaturedRestaurants();
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="bg-white font-sans">
-      {/* Barra de Navegación */}
       <Navbar />
 
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-green-50 via-white to-emerald-50 py-16 md:py-24">
+      {/* Hero Section */}
+      <section className="relative overflow-hidden bg-linear-to-br from-green-50 via-white to-emerald-50 py-16 md:py-24">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 grid md:grid-cols-2 gap-12 items-center">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-100 text-green-700 text-sm font-medium mb-6">
@@ -43,15 +71,12 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Hero image area - Limpio sin tarjetas flotantes */}
           <div className="relative hidden md:block">
-            <div className="relative">
-              <img
-                src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=800&auto=format&fit=crop"
-                alt="Comida deliciosa"
-                className="w-full h-96 object-cover rounded-3xl shadow-2xl"
-              />
-            </div>
+            <img
+              src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=800&auto=format&fit=crop"
+              alt="Comida deliciosa"
+              className="w-full h-96 object-cover rounded-3xl shadow-2xl"
+            />
           </div>
         </div>
       </section>
@@ -81,7 +106,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Featured Restaurants (Empty State Activo) */}
+      {/* Featured Restaurants */}
       <section className="py-20 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between mb-10">
@@ -91,45 +116,97 @@ export default function Home() {
             </div>
           </div>
           
-          <div className="w-full py-16 px-4 bg-white rounded-3xl border-2 border-dashed border-gray-200 text-center flex flex-col items-center justify-center">
-            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-              <span className="text-3xl">🍽️</span>
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-12 space-y-3 bg-white rounded-3xl border border-gray-100 p-8 shadow-sm">
+              <div className="w-10 h-10 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-gray-500 text-sm font-medium">Buscando los mejores restaurantes locales...</p>
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2 font-poppins">Aún no hay restaurantes</h3>
-            <p className="text-gray-500 max-w-md mx-auto">
-              Estamos trabajando duro para traer los mejores locales a tu zona. ¡Vuelve muy pronto!
-            </p>
-          </div>
+          ) : featured.length === 0 ? (
+            <div className="w-full py-16 px-4 bg-white rounded-3xl border-2 border-dashed border-gray-200 text-center flex flex-col items-center justify-center">
+              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                <span className="text-3xl">🍽️</span>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2 font-poppins">Aún no hay restaurantes</h3>
+              <p className="text-gray-500 max-w-md mx-auto">Estamos trabajando duro para traer los mejores locales a tu zona.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {featured.map((restaurant) => {
+                const isExpress = restaurant.deliveryTime <= 30;
+                const isCurrentlyOpen = restaurant.isOpen ?? true; 
+
+                return (
+                  <div 
+                    key={restaurant.id} 
+                    className={`bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col justify-between group relative ${
+                      !isCurrentlyOpen ? 'opacity-65 saturate-50' : ''
+                    }`}
+                  >
+                    <div className="relative h-48 w-full bg-gray-100 overflow-hidden">
+                      <img 
+                        src={restaurant.image || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=500&q=80'} 
+                        alt={restaurant.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      
+                      {!isCurrentlyOpen ? (
+                        <span className="absolute top-3 left-3 bg-red-600 text-white font-black text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-lg shadow flex items-center gap-1">
+                          <Lock size={10} /> Cerrado Temporalmente
+                        </span>
+                      ) : isExpress && (
+                        <span className="absolute top-3 left-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-black text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-lg shadow flex items-center gap-1 animate-pulse">
+                          <Zap size={10} className="fill-white" /> Fast Delivery
+                        </span>
+                      )}
+
+                      <span className="absolute top-3 right-3 bg-white/90 backdrop-blur-xs text-gray-800 font-bold text-xs px-2.5 py-1 rounded-full shadow-xs">
+                        {restaurant.category}
+                      </span>
+                    </div>
+
+                    <div className="p-6 flex-1 flex flex-col justify-between">
+                      <div>
+                        <h3 className={`font-extrabold text-xl text-gray-900 mb-1 font-poppins tracking-tight transition-colors ${isCurrentlyOpen ? 'group-hover:text-green-600' : 'text-gray-500'}`}>
+                          {restaurant.name}
+                        </h3>
+                        <p className="text-gray-500 text-sm line-clamp-2 leading-relaxed mb-4">
+                          {restaurant.description}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-4 border-t border-gray-50 text-xs font-semibold text-gray-600">
+                        <div className="flex items-center gap-1 bg-orange-50 text-orange-700 px-2.5 py-1.5 rounded-lg">
+                          <Clock size={14} className="text-orange-500" />
+                          <span>{restaurant.deliveryTime} min</span>
+                        </div>
+                        <div className="flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2.5 py-1.5 rounded-lg">
+                          <Bike size={14} className="text-emerald-500" />
+                          <span>{restaurant.deliveryFee === 0 ? 'Envío Gratis' : `S/. ${restaurant.deliveryFee.toFixed(2)}`}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-20 text-white bg-gradient-to-br from-green-600 to-green-500">
+      {/* CTA & Footer */}
+      <section className="py-20 text-white bg-linear-to-br from-green-600 to-green-500">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
-          <div className="w-16 h-16 bg-white/20 rounded-3xl flex items-center justify-center mx-auto mb-6">
-            <Smartphone size={32} className="text-white" />
-          </div>
+          <Smartphone size={32} className="mx-auto mb-6 text-white" />
           <h2 className="text-4xl font-black mb-4 font-poppins">¿Listo para pedir?</h2>
-          <p className="text-xl text-green-100 mb-8">Únete a más de 10,000 clientes felices disfrutando de un delivery rápido y confiable.</p>
-          <Link
-            href="/register"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-white rounded-2xl font-bold text-lg text-green-500 transition-all hover:scale-105"
-          >
-            Crear Cuenta Gratis
-            <ArrowRight size={20} />
+          <p className="text-xl text-green-100 mb-8">Únete a más de 10,000 clientes felices disfrutando de un delivery rápido.</p>
+          <Link href="/register" className="inline-flex items-center gap-2 px-8 py-4 bg-white rounded-2xl font-bold text-lg text-green-500 transition-all hover:scale-105">
+            Crear Cuenta Gratis <ArrowRight size={20} />
           </Link>
         </div>
       </section>
 
-      {/* Footer */}
       <footer className="bg-gray-900 text-gray-400 py-10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">
-          <div className="flex items-center justify-center gap-2 mb-3">
-            <div className="w-7 h-7 rounded-xl bg-green-500 flex items-center justify-center">
-              <span className="text-white font-bold text-xs">Q</span>
-            </div>
-            <span className="font-bold text-white font-poppins">QuickEats</span>
-          </div>
           <p className="text-sm">© 2026 QuickEats. Hecho con ❤️ para los amantes de la comida.</p>
         </div>
       </footer>

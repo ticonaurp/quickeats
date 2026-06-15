@@ -31,13 +31,15 @@ export default function RestaurantsPage() {
   // 🌐 Base URL dinámica para el componente (Render o Local)
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
+  // ⏱️ EFECTO DINÁMICO: Carga inicial + Polling continuo en segundo plano
   useEffect(() => {
     setMounted(true);
 
     const loadRestaurants = async () => {
       try {
+        // Mantenemos el error en null para re-intentos limpios de red
         setError(null); 
-        const response = await fetch(`${baseUrl}/restaurants`); // 👈 Cambiado
+        const response = await fetch(`${baseUrl}/restaurants`); 
         
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
@@ -55,7 +57,6 @@ export default function RestaurantsPage() {
         if (Array.isArray(rawData)) {
           realRestaurantsArray = rawData; 
         } else if (rawData && typeof rawData === 'object') {
-          // Buscamos dinámicamente si alguna de las propiedades del objeto contiene el arreglo de datos
           const potentialArray = Object.values(rawData).find(val => Array.isArray(val));
           if (potentialArray) {
             realRestaurantsArray = potentialArray as any[];
@@ -79,12 +80,21 @@ export default function RestaurantsPage() {
         console.error("❌ Error en el flujo de integración:", error);
         setError(error.message || "No se pudo establecer conexión con el servidor backend.");
       } finally {
-        setLoading(false);
+        setLoading(false); // Apaga el esqueleto de carga inicial la primera vez
       }
     };
 
+    // 1. Ejecución inmediata al cargar o montar la vista
     loadRestaurants();
-  }, [baseUrl]); // 👈 Añadido baseUrl a las dependencias
+
+    // 2. ⏱️ CONFIGURACIÓN DEL INTERVALO: Re-consulta al Gateway silenciosamente cada 1.5 segundos
+    const interval = setInterval(() => {
+      loadRestaurants();
+    }, 500);
+
+    // 3. 🧹 LIMPIEZA AUTOMÁTICA: Apaga el temporizador si el administrador navega a otra sección del panel
+    return () => clearInterval(interval);
+  }, [baseUrl]);
 
   const filtered = restaurants.filter(r =>
     !search || 
@@ -92,8 +102,38 @@ export default function RestaurantsPage() {
     r.category.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleToggleOpen = (id: string) => {
-    setRestaurants(prev => prev.map(r => r.id === id ? { ...r, isOpen: !r.isOpen } : r));
+  // 🔄 Cambiado a función asíncrona con persistencia real en base de datos (Optimistic Update)
+  const handleToggleOpen = async (id: string) => {
+    const targetRestaurant = restaurants.find(r => r.id === id);
+    if (!targetRestaurant) return;
+
+    const nextStatus = !targetRestaurant.isOpen;
+
+    // 1. Actualización Optimista en el UI
+    setRestaurants(prev => 
+      prev.map(r => r.id === id ? { ...r, isOpen: nextStatus } : r)
+    );
+
+    try {
+      // 2. Petición PATCH al API Gateway (Solo mandamos la propiedad mutada)
+      const response = await fetch(`${baseUrl}/restaurants/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isOpen: nextStatus }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al actualizar el estado en el backend.');
+      }
+    } catch (error) {
+      console.error("❌ Error actualizando el estado en el servidor:", error);
+      alert("No se pudo guardar el cambio en la base de datos. Verificando conexión...");
+      
+      // 3. Fallback/Rollback: Si el servidor falla, revertimos el interruptor al estado original
+      setRestaurants(prev => 
+        prev.map(r => r.id === id ? { ...r, isOpen: !nextStatus } : r)
+      );
+    }
   };
 
   if (!mounted) return null;
@@ -103,7 +143,7 @@ export default function RestaurantsPage() {
       
       <Sidebar />
 
-      <main className="flex-1 p-8 max-w-[1400px] mx-auto w-full space-y-4">
+      <main className="flex-1 p-8 max-w-350 mx-auto w-full space-y-4">
         
         <RestaurantHeader total={restaurants.length} />
         

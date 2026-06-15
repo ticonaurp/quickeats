@@ -1,4 +1,7 @@
 node_modules
-/dist
-*.tsbuildinfo
+dist/
 .env
+*.tsbuildinfo
+/src/generated/prisma
+/generated/prisma
+npm-debug.log*

@@ -1,23 +1,22 @@
-FROM node:20-alpine
-
+FROM node:20-alpine AS builder
+RUN apk add --no-cache tzdata
 WORKDIR /app
-
-# Copiamos los descriptores de dependencias
 COPY package*.json ./
-
-# Instalamos todas las dependencias necesarias para compilar NestJS 11 y TypeScript 5
 RUN npm install
-
-# Copiamos el código fuente y el esquema de Prisma
 COPY . .
-
-# Generamos los clientes de Prisma 7.8.0
 RUN npx prisma generate
-
-# Compilamos el proyecto de NestJS
 RUN npm run build
 
-EXPOSE 3002
+FROM node:20-alpine AS runner
+RUN apk add --no-cache tzdata
+WORKDIR /app
+COPY package*.json ./
+RUN npm install --only=production
 
-# Ejecutamos el archivo empaquetado real
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/prisma ./prisma
+
+EXPOSE 3002
 CMD ["node", "dist/main.js"]

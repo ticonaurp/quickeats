@@ -1,9 +1,25 @@
-import { IsString, IsNotEmpty, IsInt, IsNumber, IsBoolean, Min } from 'class-validator';
+import { IsString, IsNotEmpty, IsInt, IsNumber, IsBoolean, Min, IsArray, ValidateNested, Max } from 'class-validator';import { Type } from 'class-transformer';
+
+// 🌟 Sub-DTO para validar cada horario individual enviado por el admin
+export class OpeningHourDto {
+  @IsInt()
+  @Min(0)
+  @Max(6)
+  dayOfWeek!: number;
+
+  @IsString()
+  @IsNotEmpty()
+  openTime!: string; // Validará cadenas como "11:30"
+
+  @IsString()
+  @IsNotEmpty()
+  closeTime!: string; // Validará cadenas como "23:00"
+}
 
 export class CreateRestaurantDto {
   @IsString()
   @IsNotEmpty()
-  name!: string; // 👈 Agrega el "!" antes de los dos puntos
+  name!: string;
 
   @IsString()
   @IsNotEmpty()
@@ -31,8 +47,13 @@ export class CreateRestaurantDto {
   @IsBoolean()
   isFeatured!: boolean;
 
-
   @IsString()
-  @IsNotEmpty() // 👈 Cambiado de @IsOptional() a @IsNotEmpty()
-  image!: string; // 👈 Quitamos el "?"
+  @IsNotEmpty()
+  image!: string;
+
+  // 🌟 NUEVO CAMPO: Arreglo de horarios validados jerárquicamente
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => OpeningHourDto)
+  openingHours!: OpeningHourDto[];
 }

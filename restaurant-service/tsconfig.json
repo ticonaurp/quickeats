@@ -1,33 +1,29 @@
 {
   "compilerOptions": {
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
-    "resolvePackageJsonExports": true,
-    "esModuleInterop": true,
-    "isolatedModules": true,
+    "module": "commonjs",
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
-    "target": "ES2023",
-    "rootDir": "src",
-    "sourceMap": true,
+    "target": "ES2022",
+    "rootDir": "src",                        // 🎯 Enfoca la compilación solo en tu código fuente
     "outDir": "./dist",
+    "sourceMap": true,
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": true,
-    "forceConsistentCasingInFileNames": true,
     "noImplicitAny": false,
     "strictBindCallApply": false,
+    "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": false
+    // 🌟 Eliminamos "paths" y "types" para que TS busque de forma natural en las raíces superiores
   },
   "include": [
-    "src/**/*"
+    "src/**/*"                               // 🎯 Solo compila e inspecciona lo que está dentro de src
   ],
   "exclude": [
     "node_modules",
-    "dist",
-    "prisma"
+    "dist"
   ]
 }
