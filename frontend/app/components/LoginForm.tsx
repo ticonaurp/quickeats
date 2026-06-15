@@ -20,7 +20,10 @@ export function LoginForm() {
       // Si estás en producción, usará la URL de Render. Si estás en local, usará localhost:3001
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
-      const response = await fetch(`${baseUrl}/auth/login`, { // 👈 Cambiado a plantilla dinámica
+// 🔑 AGREGA ESTO PARA DETECTAR EL DESTINO REAL:
+console.log("🚀 Intentando conectar al backend en:", `${baseUrl}/auth/login`);
+
+const response = await fetch(`${baseUrl}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

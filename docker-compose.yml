@@ -53,7 +53,8 @@ services:
       - ./auth-service:/app:z
       - /app/node_modules
       - /etc/localtime:/etc/localtime:ro
-    command: npm run start:dev 
+    # 🔑 AUTOMATIZACIÓN EN CADENA: Genera tipos, empuja cambios a la BD y arranca NestJS solo
+    command: sh -c "npx prisma generate && npx prisma db push && npm run start:dev"
     networks:
       - quickeats_network
 
@@ -76,7 +77,8 @@ services:
       - ./restaurant-service:/app:z 
       - /app/node_modules
       - /etc/localtime:/etc/localtime:ro
-    command: npm run start:dev
+    # 🔑 AUTOMATIZACIÓN EN CADENA: Resuelve el error de fields inexistentes de inmediato
+    command: sh -c "npx prisma generate && npx prisma db push && npm run start:dev"
     networks:
       - quickeats_network
 
@@ -89,7 +91,7 @@ services:
     container_name: quickeats_order
     restart: unless-stopped
     ports:
-      - "3004:3004" # 🎯 Sincronizado puerto interno y externo
+      - "3004:3004"
     env_file:
       - ./order-service/.env
     environment:
@@ -99,7 +101,7 @@ services:
       - ./order-service:/app:z 
       - /app/node_modules
       - /etc/localtime:/etc/localtime:ro
-    command: npm run start:dev
+    command: sh -c "npx prisma generate && npx prisma db push && npm run start:dev"
     networks:
       - quickeats_network
 
@@ -122,7 +124,7 @@ services:
       - ./notification-service:/app:z
       - /app/node_modules
       - /etc/localtime:/etc/localtime:ro
-    command: npm run start:dev
+    command: sh -c "npx prisma generate && npx prisma db push && npm run start:dev"
     networks:
       - quickeats_network
 
