@@ -11,6 +11,9 @@ import RestaurantCard from '../components/shared/RestaurantCard';
 import ExpressDeliveryCarousel from '../components/home/ExpressDeliveryCarousel';
 import HowItWorksBanner from '../components/home/HowItWorksBanner';
 
+
+export const dynamic = 'force-dynamic';
+
 export default function UserPage() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [search, setSearch] = useState('');
