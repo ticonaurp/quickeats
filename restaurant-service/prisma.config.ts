@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
 
@@ -11,7 +12,7 @@ const config: any = {
   }
 };
 
-if (process.argv.some(arg => arg.includes('prisma') || arg.includes('db') || arg.includes('push'))) {
+if (process.argv.some((arg: string) => arg.includes('prisma') || arg.includes('db') || arg.includes('push'))) {
   config.datasource.url = process.env["DIRECT_URL"];
 }
 

@@ -1,45 +1,58 @@
-datasource db {
-  provider = "postgresql"
-  schemas  = ["restaurant_service"] // 🎯 1. Le indicamos a Prisma el territorio exacto en Supabase
-}
-
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["multiSchema"] // 🎯 2. Activamos la característica para salir de 'public'
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  schemas  = ["restaurant_service"]
 }
 
 model Restaurant {
-  id           String    @id @default(uuid())
+  id           String        @id @default(uuid())
   name         String
   description  String
   category     String
   address      String
   deliveryTime Int
   deliveryFee  Float
-  isOpen       Boolean   @default(true)
-  isFeatured   Boolean   @default(false)
-  image        String    
-  createdAt    DateTime  @default(now())
-  products     Product[] 
+  isOpen       Boolean       @default(true) 
+  isFeatured   Boolean       @default(false)
+  image        String     
+  createdAt    DateTime      @default(now())
+  products     Product[]     // 🔗 Conectado con el modelo de abajo
+  openingHours OpeningHour[] 
 
-  @@schema("restaurant_service") // 🎯 3. Mapeo explícito para el modelo Restaurant
+  @@schema("restaurant_service")
+}
+
+model OpeningHour {
+  id           String     @id @default(uuid())
+  dayOfWeek    Int        
+  openTime     String     
+  closeTime    String     
+  
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@schema("restaurant_service") 
 }
 
 model Product {
   id           String     @id @default(uuid())
   name         String
-  description  String?    
-  category     String     
-  calories     Int?       
+  description  String
   price        Float
-  image        String     
-  isAvailable  Boolean    @default(true)  
-  isPopular    Boolean    @default(false) 
+  category     String     @default("General")
+  calories     Int?       
+  image        String
+  isAvailable  Boolean    @default(true)
+  isPopular    Boolean    @default(false) // 🌟 ¡AÑADE ESTA LÍNEA AQUÍ!
   createdAt    DateTime   @default(now())
-  
-  // Relaciones
+
+  // Relación inversa con Restaurante
   restaurantId String
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
-  @@schema("restaurant_service") // 🎯 4. Mapeo explícito para el modelo Product
+  @@schema("restaurant_service")
 }

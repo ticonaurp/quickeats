@@ -1,10 +1,9 @@
-version: '3.8'
-
 services:
-  # 🗄️ La Base de Datos Local (Puerto externo 5433 para liberar el 5432)
+  # La Base de Datos Local (Puerto externo 5433 para liberar el 5432)
   postgres_db:
     image: postgres:15-alpine
     container_name: quickeats_postgres
+    restart: unless-stopped
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin123
@@ -16,12 +15,13 @@ services:
     networks:
       - quickeats_network
 
-  # 🏛️ API Gateway (Puerto 3001)
+  # API Gateway (Puerto 3001)
   gateway:
     build:
       context: ./gateway
       dockerfile: Dockerfile
     container_name: quickeats_gateway
+    restart: unless-stopped
     ports:
       - "3001:3001"
     env_file:
@@ -34,77 +34,94 @@ services:
     networks:
       - quickeats_network
 
-  # 🔐 Auth Service (Puerto 3002 - Conectado a Supabase)
+  # Auth Service (Puerto 3002 - Conectado a Supabase)
   auth-service:
     build:
       context: ./auth-service
       dockerfile: Dockerfile
+      target: builder
     container_name: quickeats_auth
+    restart: unless-stopped
     ports:
       - "3002:3002"
     env_file:
       - ./auth-service/.env
     environment:
       - NODE_TLS_REJECT_UNAUTHORIZED=0
+      - TZ=America/Lima
+    volumes:
+      - ./auth-service:/app:z
+      - /app/node_modules
+      - /etc/localtime:/etc/localtime:ro
+    command: npm run start:dev 
     networks:
       - quickeats_network
 
-  # 🍔 Restaurant Service (Puerto 3003 - Modo Desarrollo Vivo)
+  # Restaurant Service (Puerto 3003 - Modo Desarrollo Vivo)
   restaurant-service:
     build:
       context: ./restaurant-service
       dockerfile: Dockerfile
       target: builder
     container_name: quickeats_restaurant
+    restart: unless-stopped
     ports:
       - "3003:3003"
     env_file:
       - ./restaurant-service/.env
     environment:
       - NODE_TLS_REJECT_UNAUTHORIZED=0
+      - TZ=America/Lima
     volumes:
-      - ./restaurant-service:/app
+      - ./restaurant-service:/app:z 
       - /app/node_modules
+      - /etc/localtime:/etc/localtime:ro
     command: npm run start:dev
     networks:
       - quickeats_network
 
-  # 🛒 Order Service (Puerto 3004 - Modo Desarrollo Vivo)
+  # Order Service (Puerto 3004 - Modo Desarrollo Vivo)
   order-service:
     build:
       context: ./order-service
       dockerfile: Dockerfile
       target: builder
     container_name: quickeats_order
+    restart: unless-stopped
     ports:
-      - "3004:3004"
+      - "3004:3004" # 🎯 Sincronizado puerto interno y externo
     env_file:
       - ./order-service/.env
     environment:
       - NODE_TLS_REJECT_UNAUTHORIZED=0
+      - TZ=America/Lima
     volumes:
-      - ./order-service:/app
+      - ./order-service:/app:z 
       - /app/node_modules
+      - /etc/localtime:/etc/localtime:ro
     command: npm run start:dev
     networks:
       - quickeats_network
 
-  # 🔔 Notification Service (Puerto 3005 - Modo Desarrollo Vivo)
+  # Notification Service (Puerto 3005 - Modo Desarrollo Vivo)
   notification-service:
     build:
       context: ./notification-service
       dockerfile: Dockerfile
       target: builder
     container_name: quickeats_notification
+    restart: unless-stopped
     ports:
       - "3005:3005"
     env_file:
       - ./notification-service/.env
     environment:
       - NODE_TLS_REJECT_UNAUTHORIZED=0
+      - TZ=America/Lima
     volumes:
-      - ./notification-service:/app
+      - ./notification-service:/app:z
       - /app/node_modules
+      - /etc/localtime:/etc/localtime:ro
     command: npm run start:dev
     networks:
       - quickeats_network
