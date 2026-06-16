@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+// 🟢 Importamos useEffect
+import { useState, useEffect } from 'react';
 import TopNavbar from '../components/TopNavbar';
 import CartHeader from './components/CartHeader';
 import CartItemsList from './components/CartItemsList';
@@ -17,7 +18,6 @@ export interface CheckoutCartItem {
 }
 
 export default function CartPage() {
-  // Estado reactivo del carrito
   const [cart, setCart] = useState<CheckoutCartItem[]>([
     {
       id: 'm1',
@@ -35,7 +35,12 @@ export default function CartPage() {
     deliveryFee: 4.50,
   };
 
-  // Manejo de cantidades
+  // 🟢 EFECTO MÁGICO: Guarda el estado del carrito en el navegador automáticamente
+  useEffect(() => {
+    localStorage.setItem('quickeats_cart', JSON.stringify(cart));
+    localStorage.setItem('quickeats_restaurant', JSON.stringify(restaurantInfo));
+  }, [cart]);
+
   const handleUpdateQuantity = (id: string, action: 'increase' | 'decrease') => {
     setCart((prevCart) =>
       prevCart.map((item) => {
@@ -48,17 +53,14 @@ export default function CartPage() {
     );
   };
 
-  // Remover un item individual
   const handleRemoveFromCart = (id: string) => {
     setCart((prevCart) => prevCart.filter((item) => item.id !== id));
   };
 
-  // Vaciar el carrito entero
   const handleClearCart = () => {
     setCart([]);
   };
 
-  // Cálculos dinámicos globales
   const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const total = subtotal > 0 ? subtotal + restaurantInfo.deliveryFee : 0;
 
@@ -69,7 +71,6 @@ export default function CartPage() {
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 pt-10">
         <div className="grid grid-cols-1 md:grid-cols-10 gap-8">
           
-          {/* COLUMNA IZQUIERDA: CABECERA Y PRODUCTOS (6/10 del canvas) */}
           <div className="md:col-span-6 space-y-7">
             <CartHeader 
               restaurantId={restaurantInfo.id} 
@@ -84,7 +85,6 @@ export default function CartPage() {
             />
           </div>
 
-          {/* COLUMNA DERECHA: RESUMEN Y TIEMPO ESTIMADO (4/10 del canvas) */}
           <div className="md:col-span-4 sticky top-6 self-start space-y-4">
             <CartSummary 
               subtotal={subtotal}
