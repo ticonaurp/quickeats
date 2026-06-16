@@ -1,7 +1,7 @@
-import { Controller, Post, Put, Get, Body, Param, Delete } from '@nestjs/common';
+import { Controller, Post, Put, Get, Body, Param, Delete, Query } from '@nestjs/common'; // 🟢 CORRECCIÓN 1: Importamos 'Query'
 import { ProductService } from './product.service';
 
-@Controller('products') // Expone la ruta: http://localhost:4000/products
+@Controller('products') 
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
@@ -23,10 +23,10 @@ export class ProductController {
     return this.productService.update(id, body);
   }
 
-  // 📋 4. Listar todos los productos (Para la grilla del panel de administración)
+  // 📋 4. Listar todos los productos (🟢 CORREGIDO 2: Captura el restaurantId de la URL y se lo pasa al servicio)
   @Get()
-  findAll() {
-    return this.productService.findAll();
+  findAll(@Query('restaurantId') restaurantId?: string) {
+    return this.productService.findAll(restaurantId);
   }
 
   // ❌ 5. AGREGADO: Endpoint para recibir la orden de eliminación desde el Frontend

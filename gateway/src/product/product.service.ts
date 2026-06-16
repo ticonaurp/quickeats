@@ -53,11 +53,14 @@ export class ProductService {
     }
   }
 
-  // 📋 4. Redirige la lista de todos los productos
-  async findAll() {
+  // 📋 4. Redirige la lista de todos los productos (🟢 CORREGIDO: Ahora acepta y reenvía el restaurantId)
+  async findAll(restaurantId?: string) {
     try {
       const response = await firstValueFrom(
-        this.httpService.get(this.baseUrl)
+        this.httpService.get(this.baseUrl, {
+          // Usamos la propiedad params de Axios para clavar el query param automáticamente
+          params: restaurantId ? { restaurantId } : {},
+        })
       );
       return response.data;
     } catch (error) {
@@ -80,4 +83,5 @@ export class ProductService {
       throw error;
     }
   }
+  
 }

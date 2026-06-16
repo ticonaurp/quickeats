@@ -1,4 +1,4 @@
-import { Controller, Post, Put, Body, Param, Get, Delete } from '@nestjs/common';
+import { Controller, Post, Put, Body, Param, Get, Delete, Query } from '@nestjs/common';
 import { ProductService } from './product.service';
 
 @Controller('products') 
@@ -11,13 +11,13 @@ export class ProductController {
     return this.productService.create(createProductDto);
   }
 
-  // 📋 2. Listar todos los productos (Para la tabla general del Front)
+  // 📋 2. Listar productos (🟢 CORREGIDO: Ahora filtra por restaurante si viene en la URL)
   @Get()
-  async findAll() {
-    return this.productService.findAll();
+  async findAll(@Query('restaurantId') restaurantId?: string) {
+    return this.productService.findAll(restaurantId);
   }
 
-  // 🔍 3. Buscar un producto por ID (Para cargar los datos en la pantalla de Editar)
+  // 🔍 3. Buscar un producto por ID
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return this.productService.findOne(id);
@@ -29,7 +29,7 @@ export class ProductController {
     return this.productService.update(id, updateProductDto);
   }
 
-  // ❌ 5. AGREGADO: Eliminar producto por ID (Para activar tu DeleteModal real)
+  // ❌ 5. Eliminar producto por ID
   @Delete(':id')
   async remove(@Param('id') id: string) {
     return this.productService.remove(id);
