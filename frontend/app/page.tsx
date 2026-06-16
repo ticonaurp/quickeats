@@ -28,9 +28,10 @@ export default function Home() {
 
     loadFeaturedRestaurants();
 
+    // 🕒 Saneamos el intervalo a 1000ms para desarrollo local
     const interval = setInterval(() => {
       loadFeaturedRestaurants();
-    }, 500);
+    }, 1000);
 
     return () => clearInterval(interval);
   }, []);
@@ -130,10 +131,19 @@ export default function Home() {
               <p className="text-gray-500 max-w-md mx-auto">Estamos trabajando duro para traer los mejores locales a tu zona.</p>
             </div>
           ) : (
+            // 🎯 REPARADO: Estructura de Grid de un solo nivel sin anidaciones rotas
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
               {featured.map((restaurant) => {
                 const isExpress = restaurant.deliveryTime <= 30;
                 const isCurrentlyOpen = restaurant.isOpen ?? true; 
+
+                // 🛡️ Validación defensiva contra strings de prueba basura ("d", "dw")
+                const hasValidImage = restaurant.image && 
+                  (restaurant.image.startsWith('http') || restaurant.image.startsWith('/'));
+                
+                const imageSrc = hasValidImage 
+                  ? restaurant.image 
+                  : 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=500&q=80';
 
                 return (
                   <div 
@@ -144,7 +154,7 @@ export default function Home() {
                   >
                     <div className="relative h-48 w-full bg-gray-100 overflow-hidden">
                       <img 
-                        src={restaurant.image || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=500&q=80'} 
+                        src={imageSrc} 
                         alt={restaurant.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />

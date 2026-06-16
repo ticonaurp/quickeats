@@ -4,15 +4,15 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Habilitamos CORS para que tu Frontend (puerto 3000) pueda leer las respuestas
-  // 🌟 Cambia solo este bloque dentro de tu app.enableCors:
-app.enableCors({
-  origin: '*', // 🎯 Forzamos el comodín para desarrollo local e IP de red
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-  credentials: true,
-});
+  // 🔑 1. Habilitamos CORS dinámico para evitar bloqueos del navegador
+  app.enableCors({
+    origin: true, 
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
+    allowedHeaders: 'Content-Type, Accept, Authorization', 
+  });
 
-  // 🎯 CORRECCIÓN: Forzamos la escucha en '0.0.0.0' para abrir las compuertas de Docker
+  // 🔑 2. Forzamos la escucha en '0.0.0.0' para que Docker reciba tráfico externo
   const port = process.env.PORT ?? 3001;
   await app.listen(port, '0.0.0.0');
   
