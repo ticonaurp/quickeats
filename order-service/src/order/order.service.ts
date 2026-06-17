@@ -1,77 +1,78 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { CreateOrderDto } from './dto/create-order.dto';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { CreateOrderDto } from './dto/create-order.dto';
 
 @Injectable()
 export class OrderService {
-  // 🟢 Usamos el DNS interno de Docker (no localhost) para alcanzar al restaurant-service.
-  // En Render viene seteada la variable RESTAURANT_SERVICE_URL.
-  private readonly RESTAURANT_SERVICE_URL = `${process.env.RESTAURANT_SERVICE_URL || 'http://restaurant-service:3003'}/products`;
-
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) {}
 
   async create(createOrderDto: CreateOrderDto) {
-    try {
-      // 🔍 1. Traemos la lista completa de productos desde restaurant-service
-      const response = await fetch(this.RESTAURANT_SERVICE_URL);
-      if (!response.ok) throw new Error();
+    const { items, ...orderData } = createOrderDto;
 
-      const products = await response.json();
-
-      // 🕵️‍♂️ 2. Verificamos si el ID enviado existe dentro del array de productos
-      const productExists = products.some((p: any) => p.id === createOrderDto.productId);
-
-      if (!productExists) {
-        throw new NotFoundException(`El producto con ID '${createOrderDto.productId}' no existe en el catálogo de restaurantes.`);
-      }
-    } catch (error) {
-      if (error instanceof NotFoundException) throw error;
-      throw new BadRequestException('No se pudo verificar el producto porque el servicio de restaurantes no está disponible.');
-    }
-
-    // 💾 3. Si existe, creamos la orden en la base de datos
     return this.prisma.order.create({
       data: {
-        userId: createOrderDto.userId,
-        productId: createOrderDto.productId,
-        quantity: createOrderDto.quantity,
+        ...orderData,
+        items: {
+          create: items.map(item => ({
+            productId: item.productId,
+            name: item.name,
+            price: Number(item.price),
+            quantity: Number(item.quantity),
+          })),
+        },
+      },
+      include: {
+        items: true,
       },
     });
   }
 
   async findAll() {
     return this.prisma.order.findMany({
-      orderBy: { createdAt: 'desc' },
+      include: {
+        items: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
   }
 
-  // 👤 Devuelve únicamente las órdenes que pertenecen al usuario indicado
+  // 👤 NUEVO: Busca todas las órdenes históricas pertenecientes a un usuario
   async findByUser(userId: string) {
     return this.prisma.order.findMany({
       where: { userId },
-      orderBy: { createdAt: 'desc' },
+      include: {
+        items: true, // Trae el detalle de qué compró en cada orden
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
   }
 
   async findOne(id: string) {
     const order = await this.prisma.order.findUnique({
       where: { id },
+      include: {
+        items: true,
+      },
     });
-
-    if (!order) {
-      throw new NotFoundException(`La orden con ID ${id} no existe`);
-    }
-
+    if (!order) throw new NotFoundException('La orden solicitada no existe.');
     return order;
   }
 
-  async updateStatus(id: string, updateOrderStatusDto: string) {
-    // Primero verificamos si la orden existe
+  // 🔄 NUEVO: Actualiza el estado de la orden (PENDING -> PREPARING, etc.)
+  async updateStatus(id: string, status: string) {
+    // Verificamos primero si existe la orden
     await this.findOne(id);
 
     return this.prisma.order.update({
       where: { id },
-      data: { status: updateOrderStatusDto },
+      data: { status },
+      include: {
+        items: true,
+      },
     });
   }
 }

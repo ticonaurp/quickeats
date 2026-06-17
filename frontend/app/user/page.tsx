@@ -40,7 +40,7 @@ export default function UserPage() {
 
     const interval = setInterval(() => {
       loadRestaurants();
-    }, 500);
+    }, 1000);
 
     return () => clearInterval(interval);
   }, []);

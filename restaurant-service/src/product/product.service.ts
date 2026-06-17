@@ -22,9 +22,11 @@ export class ProductService {
     });
   }
 
-  // 📋 2. Obtener todos los productos
-  async findAll() {
+  // 📋 2. Obtener todos los productos (🟢 CORREGIDO: Ahora acepta el filtro relacional)
+  async findAll(restaurantId?: string) {
     return this.prisma.product.findMany({
+      // Si viene restaurantId, filtra por ese restaurante; si no, trae todos de forma global
+      where: restaurantId ? { restaurantId: restaurantId } : {},
       orderBy: { createdAt: 'desc' }, // Trae los más recientes primero
     });
   }
@@ -65,7 +67,7 @@ export class ProductService {
     }
   }
 
-  // ❌ 5. AGREGADO: Eliminar un producto físicamente de PostgreSQL mediante Prisma
+  // ❌ 5. Eliminar un producto físicamente de PostgreSQL mediante Prisma
   async remove(id: string) {
     try {
       return await this.prisma.product.delete({

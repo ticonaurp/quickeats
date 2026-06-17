@@ -7,12 +7,42 @@ generator client {
 }
 
 model Order {
-  id         String   @id @default(uuid())
-  userId     String
-  productId  String
-  quantity   Int
-  status     String   @default("PENDING")
-  createdAt  DateTime @default(now())
+  id             String      @id @default(uuid())
+  userId         String
+  restaurantId   String      // 🏪 Para saber a qué restaurante pertenece la orden
+  restaurantName String      // 📝 Para mostrar rápido en el historial del cliente
+  
+  // 📍 Dirección (Paso 1 de tu pantalla de Pago)
+  address        String      // Guardará tu "Av. Principal 123"
+  deliveryNotes  String?     // Opcional: "Nro. de departamento, piso, etc."
 
-  @@map("Order") // Ahora vivirá limpiamente en public.Order
+  // 💳 Método de Pago (Paso 2 de tu pantalla de Pago)
+  paymentMethod  String      // "CARD" o "CASH"
+
+  // 🧮 Instantánea Financiera (Para congelar los precios del momento de la compra)
+  subtotal       Float
+  deliveryFee    Float
+  total          Float
+
+  // 🚦 Control de Estado (¡Tal como dijiste, se queda con su valor por defecto!)
+  status         String      @default("PENDING") 
+  createdAt      DateTime    @default(now())
+  
+  // 🔄 Relación de 1 a muchos: Una orden contiene muchos platos seleccionados
+  items          OrderItem[]
+
+  @@map("Order")
+}
+
+model OrderItem {
+  id        String   @id @default(uuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  productId String   // ID del plato (Gaseosa, Pizza, etc.)
+  name      String   // Nombre del plato en el momento exacto de la compra
+  price     Float    // Precio exacto al que se compró
+  quantity  Int      // Cantidad solicitada
+
+  @@map("OrderItem")
 }

@@ -90,7 +90,7 @@ export default function RestaurantsPage() {
     // 2. ⏱️ CONFIGURACIÓN DEL INTERVALO: Re-consulta al Gateway silenciosamente cada 1.5 segundos
     const interval = setInterval(() => {
       loadRestaurants();
-    }, 500);
+    }, 1000);
 
     // 3. 🧹 LIMPIEZA AUTOMÁTICA: Apaga el temporizador si el administrador navega a otra sección del panel
     return () => clearInterval(interval);

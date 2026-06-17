@@ -14,7 +14,14 @@ export default function CartHeader({ restaurantId, restaurantName }: CartHeaderP
   return (
     <div className="flex items-center gap-3">
       <button 
-        onClick={() => router.push(`/restaurants/${restaurantId}`)}
+        // 🟢 CORREGIDO: Si no hay ID, te regresa a la vista principal en '/user'
+        onClick={() => {
+          if (!restaurantId || restaurantId === '/' || restaurantId === '') {
+            router.push('/user'); 
+          } else {
+            router.push(`/restaurants/${restaurantId}`);
+          }
+        }}
         className="w-10 h-10 bg-white border border-gray-100 rounded-full flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors group shrink-0"
       >
         <ArrowLeft size={18} className="text-gray-700 group-hover:-translate-x-0.5 transition-transform" />
