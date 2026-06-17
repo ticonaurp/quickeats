@@ -51,12 +51,6 @@ export default function AddressSection({ address, setAddress, onContinue }: Addr
           />
         </div>
 
-        {/* 🗺️ Contenedor del Mapa */}
-        <div className="w-full h-44 bg-gray-100 rounded-xl border border-gray-200 flex flex-col items-center justify-center text-gray-400 gap-1.5 overflow-hidden select-none">
-          <MapPin size={22} className="text-gray-400/80 animate-pulse" />
-          <span className="text-[0.72rem] font-bold uppercase tracking-wider text-gray-400">Mapa de Google Maps</span>
-        </div>
-
         <div>
           <label className="block text-gray-700 mb-1.5" style={{ fontWeight: 600, fontSize: '0.875rem' }}>
             Notas de entrega (opcional)

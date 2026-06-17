@@ -68,7 +68,14 @@ export default function CartItemsList({ cart, restaurantId, onUpdateQuantity, on
       </AnimatePresence>
 
       <button 
-        onClick={() => router.push(`/restaurants/${restaurantId}`)}
+        // 🟢 CORREGIDO: El botón de añadir más productos ahora también redirige de forma segura a '/user'
+        onClick={() => {
+          if (!restaurantId || restaurantId === '/' || restaurantId === '') {
+            router.push('/user');
+          } else {
+            router.push(`/restaurants/${restaurantId}`);
+          }
+        }}
         className="w-full bg-white text-[#22C55E] font-bold text-[0.85rem] py-3 rounded-2xl flex items-center justify-center gap-1.5 border border-dashed border-gray-200 hover:border-[#22C55E]/40 hover:bg-green-50/40 transition-colors"
       >
         <Plus size={15} className="stroke-[2.5]" />

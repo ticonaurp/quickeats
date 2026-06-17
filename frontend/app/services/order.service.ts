@@ -1,17 +1,32 @@
-// 📋 1. Definimos la estructura de datos que requiere el backend
+// 📋 1. Definimos la sub-estructura para los platos del carrito
+export interface OrderItemPayload {
+  productId: string;
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+// 📦 2. Definimos la estructura completa que tu NestJS CreateOrderDto exige
 export interface CreateOrderPayload {
   userId: string;
-  productId: string;
-  quantity: number;
+  restaurantId: string;
+  restaurantName: string;
+  address: string;
+  deliveryNotes?: string; // Opcional
+  paymentMethod: 'CARD' | 'CASH'; // Tipado estricto alineado con el backend
+  subtotal: number;
+  deliveryFee: number;
+  total: number;
+  items: OrderItemPayload[]; // 🚀 Ahora es un arreglo de productos
 }
 
 // 🌐 Base URL dinámica para el archivo de servicios (Render o Local)
 const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
-// 2. Función para enviar la orden al API Gateway
+// 🚀 Enviar la orden al API Gateway
 export const createOrder = async (payload: CreateOrderPayload) => {
   try {
-    const response = await fetch(`${baseUrl}/orders`, { // 👈 Cambiado a plantilla dinámica
+    const response = await fetch(`${baseUrl}/orders`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -21,22 +36,21 @@ export const createOrder = async (payload: CreateOrderPayload) => {
 
     const data = await response.json();
 
-    // Si el Gateway o el Order-Service responden con un error (ej: 400 o 404)
     if (!response.ok) {
-      // Capturamos el mensaje controlado que configuramos en el backend
       throw new Error(data.message || 'Error al procesar el pedido');
     }
 
-    return data; // Retorna la orden creada (contiene id, status "PENDING", etc.)
+    return data; 
   } catch (error: any) {
-    console.error('Error en el servicio de órdenes:', error.message);
+    console.error('Error en el servicio de órdenes (createOrder):', error.message);
     throw error;
   }
 };
 
+// 📋 Listar todas las órdenes de la app
 export const getOrders = async () => {
   try {
-    const response = await fetch(`${baseUrl}/orders`, { // 👈 Cambiado a plantilla dinámica
+    const response = await fetch(`${baseUrl}/orders`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -46,14 +60,14 @@ export const getOrders = async () => {
     const data = await response.json();
     if (!response.ok) throw new Error(data.message || 'Error al obtener el historial');
 
-    return data; // Devuelve el array de órdenes
+    return data; 
   } catch (error: any) {
     console.error('Error en getOrders:', error.message);
     throw error;
   }
 };
 
-// 🔄 Actualiza el estado de una orden (usado por el panel de administrador)
+// 🔄 Actualiza el estado de una orden (panel de administrador)
 export const updateOrderStatus = async (orderId: string, status: string) => {
   try {
     const response = await fetch(`${baseUrl}/orders/${orderId}/status`, {
@@ -67,7 +81,7 @@ export const updateOrderStatus = async (orderId: string, status: string) => {
     const data = await response.json();
     if (!response.ok) throw new Error(data.message || 'Error al actualizar el estado');
 
-    return data; // Devuelve la orden ya actualizada
+    return data; 
   } catch (error: any) {
     console.error('Error en updateOrderStatus:', error.message);
     throw error;
@@ -85,9 +99,9 @@ export const getOrdersByUser = async (userId: string) => {
     });
 
     const data = await response.json();
-    if (!response.ok) throw new Error(data.message || 'Error al obtener el historial');
+    if (!response.ok) throw new Error(data.message || 'Error al obtener el historial del usuario');
 
-    return data; // Devuelve el array de órdenes del usuario
+    return data; 
   } catch (error: any) {
     console.error('Error en getOrdersByUser:', error.message);
     throw error;

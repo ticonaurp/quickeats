@@ -37,6 +37,9 @@ export default function RestaurantDetailPage({ params }: RestaurantPageProps) {
   // 🟢 CERO HARDCODEO: El estado del restaurante ahora arranca limpio desde la base de datos
   const [restaurantInfo, setRestaurantInfo] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  
+  // 🛡️ CONTROL DE QA: Estado bandera para saber cuándo terminó de leer el LocalStorage
+  const [isCartLoaded, setIsCartLoaded] = useState<boolean>(false);
 
   // 4. EFECTO: Carga en paralelo los productos y los datos de la tienda usando el ID dinámico
   useEffect(() => {
@@ -68,6 +71,7 @@ export default function RestaurantDetailPage({ params }: RestaurantPageProps) {
           cuisine: restaurantData.category || 'General', // Se conecta con tu campo 'category'
           description: restaurantData.description || 'Sin descripción disponible por el momento.',
           deliveryFee: Number(restaurantData.deliveryFee) || 0.00,
+          deliveryTime: Number(restaurantData.deliveryTime || restaurantData.deliveryMin || restaurantData.estimatedTime || 25),
           coverImage: restaurantData.image || 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=1200'
         });
 
@@ -84,21 +88,48 @@ export default function RestaurantDetailPage({ params }: RestaurantPageProps) {
     }
   }, [restaurantId]); // Reacciona de forma reactiva si el ID cambia en la URL
 
-  // 5. EFECTO DE PERSISTENCIA: Actualiza el localStorage para la pantalla de pagos
+  // 📥 NUEVO EFECTO DE HIDRATACIÓN: Lee el carrito guardado apenas entras a la página
   useEffect(() => {
+    const savedCart = localStorage.getItem('quickeats_cart');
+    const savedRestaurant = localStorage.getItem('quickeats_restaurant');
+
+    if (savedCart && savedRestaurant) {
+      const parsedRest = JSON.parse(savedRestaurant);
+      // Solo restauramos el carrito si pertenece a este restaurante específico
+      if (parsedRest.id === restaurantId) {
+        setCart(JSON.parse(savedCart));
+      }
+    }
+    setIsCartLoaded(true); // Bloqueo desactivado: Ya sabemos qué había en el navegador
+  }, [restaurantId]);
+
+  // 5. EFECTO DE PERSISTENCIA: Sincroniza los cambios hacia el LocalStorage
+  useEffect(() => {
+    // 🛡️ Guardaguarda de seguridad: No sobreescribir nada hasta que el efecto de lectura haya terminado
+    if (!isCartLoaded) return;
+
     if (cart.length > 0 && restaurantInfo) {
-      const formattedCartForCheckout = cart.map(item => ({
-        id: item.id,
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity,
-        calories: '480 cal',
-        image: 'https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?w=300'
-      }));
+      const formattedCartForCheckout = cart.map(item => {
+        const originalItem = menuItems.find(p => p.id === item.id);
+
+        return {
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          calories: originalItem?.calories || '350 cal',
+          image: originalItem?.image || 'https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?w=300'
+        };
+      });
+
       localStorage.setItem('quickeats_cart', JSON.stringify(formattedCartForCheckout));
       localStorage.setItem('quickeats_restaurant', JSON.stringify(restaurantInfo));
+    } else if (cart.length === 0 && isCartLoaded) {
+      // Si el usuario remueve todos los elementos desde el sidebar, limpiamos el almacenamiento
+      localStorage.removeItem('quickeats_cart');
+      localStorage.removeItem('quickeats_restaurant');
     }
-  }, [cart, restaurantInfo]);
+  }, [cart, restaurantInfo, menuItems, isCartLoaded]);
 
   // Lógica de manipulación de cantidades en el carrito
   const handleUpdateQuantity = (id: string, name: string, price: number, action: 'increase' | 'decrease') => {

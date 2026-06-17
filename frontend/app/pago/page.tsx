@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-import { Order } from '../data/mockData';
 
 // 🟢 Importamos el TopNavbar respetando tu árbol de archivos
 import TopNavbar from '../components/TopNavbar';
@@ -36,8 +35,20 @@ export default function PagoPage() {
     if (savedRestaurant) setRestaurant(JSON.parse(savedRestaurant));
   }, []);
 
-  // Cálculos dinámicos globales para los soles (S/.)
-  const cartTotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  // 🚀 NORMALIZACIÓN DE QA: Asegura compatibilidad si el producto viene anidado o plano
+  const normalizedCart = cart.map((item) => {
+    const target = item.product || item; // Si existe item.product usa ese, si no, usa el elemento raíz
+    return {
+      id: item.id || target.id || target.productId,
+      productId: target.productId || target.id || item.productId || item.id,
+      name: target.name || 'Producto',
+      price: Number(target.price || 0),
+      quantity: Number(item.quantity || 1),
+    };
+  });
+
+  // 📊 Cálculos dinámicos globales basados en el carrito normalizado
+  const cartTotal = normalizedCart.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const deliveryFee = restaurant?.deliveryFee ?? 0;
   const total = cartTotal + deliveryFee;
 
@@ -50,40 +61,71 @@ export default function PagoPage() {
       toast.error('Por favor, ingresa los datos de tu tarjeta'); 
       return;
     }
-    setLoading(true);
-    await new Promise(r => setTimeout(r, 1800));
-
-    const order: Order = {
-      id: `ORD-${Date.now()}`,
-      restaurantName: restaurant?.name ?? 'Restaurante',
-      restaurantId: restaurant?.id ?? '',
-      items: cart,
-      subtotal: cartTotal,
-      deliveryFee,
-      total,
-      status: 'confirmed',
-      createdAt: new Date(),
-      estimatedDelivery: '30-45 min',
-      address: address.street,
-    };
-
-    console.log('Orden procesada con éxito:', order);
-    setLoading(false);
-    toast.success('¡Pedido realizado con éxito! 🎉');
     
-    // Limpiamos el carrito local tras finalizar la compra exitosamente
-    localStorage.removeItem('quickeats_cart');
-    router.push('/orders'); 
+    setLoading(true);
+
+    try {
+      // 👤 OBTENCIÓN DE USERID
+      const userId = localStorage.getItem('userId') || 'user_dev_id_123';
+
+      // 🌐 URL DINÁMICA DEL GATEWAY
+      const gatewayUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+      // 📦 MAPEO ESTRICTO PARA TU CREATE-ORDER DTO
+      const orderPayload = {
+        userId,
+        restaurantId: restaurant?.id ?? '',
+        restaurantName: restaurant?.name ?? 'Restaurante',
+        address: address.street,
+        deliveryNotes: address.notes || undefined, 
+        paymentMethod: paymentMethod === 'card' ? 'CARD' : 'CASH', 
+        subtotal: cartTotal,
+        deliveryFee,
+        total,
+        // Usamos el formato limpio ya normalizado
+        items: normalizedCart.map((item) => ({
+          productId: item.productId,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+        })),
+      };
+
+      // 🚀 DISPARO DE PETICIÓN AL API GATEWAY
+      const response = await fetch(`${gatewayUrl}/orders`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderPayload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Hubo un problema al procesar tu pedido.');
+      }
+
+      console.log('Orden procesada y guardada con éxito:', data);
+      toast.success('¡Pedido realizado con éxito! 🎉');
+      
+      localStorage.removeItem('quickeats_cart');
+      router.push('/orders'); 
+
+    } catch (error: any) {
+      console.error('Error al generar la orden:', error);
+      toast.error(error.message || 'No se pudo conectar con el servidor.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans antialiased pb-16">
-      {/* 🟢 NAVBAR INTEGRADO EN LA PARTE SUPERIOR */}
       <TopNavbar />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-10">
         
-        {/* Botón de retroceso y Título */}
         <div className="flex items-center gap-4 mb-8">
           <button 
             onClick={() => step === 'payment' ? setStep('address') : router.push('/cart')} 
@@ -98,11 +140,9 @@ export default function PagoPage() {
           </div>
         </div>
 
-        {/* Indicador de Línea de progreso */}
         <StepIndicator step={step} />
 
         <div className="grid lg:grid-cols-3 gap-6">
-          {/* Formularios dinámicos controlados por el botón */}
           <div className="lg:col-span-2">
             {step === 'address' ? (
               <AddressSection 
@@ -123,11 +163,12 @@ export default function PagoPage() {
             )}
           </div>
 
-          {/* Resumen de la Orden Lateral en S/. */}
+          {/* Resumen de la Orden Lateral */}
           <div>
+            {/* 🟢 Pasamos "normalizedCart" garantizando la lectura de datos */}
             <OrderSummarySidebar 
               restaurant={restaurant} 
-              cart={cart} 
+              cart={normalizedCart} 
               cartTotal={cartTotal} 
               deliveryFee={deliveryFee} 
               total={total} 

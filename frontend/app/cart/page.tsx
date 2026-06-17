@@ -1,6 +1,5 @@
 'use client';
 
-// 🟢 Importamos useEffect
 import { useState, useEffect } from 'react';
 import TopNavbar from '../components/TopNavbar';
 import CartHeader from './components/CartHeader';
@@ -17,30 +16,46 @@ export interface CheckoutCartItem {
   image: string;
 }
 
+interface RestaurantInfo {
+  id: string;
+  name: string;
+  deliveryFee: number;
+  deliveryTime?: number;
+}
+
 export default function CartPage() {
-  const [cart, setCart] = useState<CheckoutCartItem[]>([
-    {
-      id: 'm1',
-      name: 'Al Pastor Tacos (3)',
-      price: 26.00,
-      quantity: 1,
-      calories: '480 cal',
-      image: 'https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?auto=format&fit=crop&w=300&q=80',
-    }
-  ]);
+  const [cart, setCart] = useState<CheckoutCartItem[]>([]);
+  const [restaurantInfo, setRestaurantInfo] = useState<RestaurantInfo | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
 
-  const restaurantInfo = {
-    id: '1', 
-    name: 'Taco Loco',
-    deliveryFee: 4.50,
-  };
-
-  // 🟢 EFECTO MÁGICO: Guarda el estado del carrito en el navegador automáticamente
+  // 📋 1. EFECTO DE CARGA: Recupera la información real del LocalStorage al montar el componente
   useEffect(() => {
-    localStorage.setItem('quickeats_cart', JSON.stringify(cart));
-    localStorage.setItem('quickeats_restaurant', JSON.stringify(restaurantInfo));
-  }, [cart]);
+    const savedCart = localStorage.getItem('quickeats_cart');
+    const savedRestaurant = localStorage.getItem('quickeats_restaurant');
 
+    if (savedCart) {
+      setCart(JSON.parse(savedCart));
+    }
+    if (savedRestaurant) {
+      setRestaurantInfo(JSON.parse(savedRestaurant));
+    }
+    setIsLoaded(true);
+  }, []);
+
+  // 🔄 2. EFECTO DE SINCRONIZACIÓN: 🟢 CORREGIDO PARA EVITAR EL BUG 404
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    if (cart.length === 0) {
+      // Solo removemos los productos del carrito. NO eliminamos el restaurante
+      // para que el botón de regresar siga teniendo el ID dinámico a dónde ir.
+      localStorage.removeItem('quickeats_cart');
+    } else {
+      localStorage.setItem('quickeats_cart', JSON.stringify(cart));
+    }
+  }, [cart, isLoaded]);
+
+  // Manejador dinámico para actualizar cantidades
   const handleUpdateQuantity = (id: string, action: 'increase' | 'decrease') => {
     setCart((prevCart) =>
       prevCart.map((item) => {
@@ -53,16 +68,28 @@ export default function CartPage() {
     );
   };
 
+  // Eliminar un producto específico
   const handleRemoveFromCart = (id: string) => {
     setCart((prevCart) => prevCart.filter((item) => item.id !== id));
   };
 
+  // Vaciar el carrito completo
   const handleClearCart = () => {
     setCart([]);
   };
 
+  // Cálculos matemáticos
   const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const total = subtotal > 0 ? subtotal + restaurantInfo.deliveryFee : 0;
+  const deliveryFee = restaurantInfo?.deliveryFee ?? 0;
+  const total = subtotal > 0 ? subtotal + deliveryFee : 0;
+
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
+        <p className="text-gray-400 font-medium">Cargando tu carrito...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] font-sans antialiased pb-16">
@@ -71,30 +98,36 @@ export default function CartPage() {
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 pt-10">
         <div className="grid grid-cols-1 md:grid-cols-10 gap-8">
           
+          {/* Lado Izquierdo: Lista de ítems */}
           <div className="md:col-span-6 space-y-7">
+            {/* 🛡️ SALVAVIDAS: Si no hay ID por alguna razón extraña, lo mandamos al Home ("/") en lugar de un 404 */}
             <CartHeader 
-              restaurantId={restaurantInfo.id} 
-              restaurantName={restaurantInfo.name} 
+              restaurantId={restaurantInfo?.id || '/'} 
+              restaurantName={restaurantInfo?.name || 'tu tienda'} 
             />
             
             <CartItemsList 
               cart={cart}
-              restaurantId={restaurantInfo.id}
+              restaurantId={restaurantInfo?.id || '/'}
               onUpdateQuantity={handleUpdateQuantity}
               onRemoveFromCart={handleRemoveFromCart}
             />
           </div>
 
+          {/* Lado Derecho: Resumen financiero */}
           <div className="md:col-span-4 sticky top-6 self-start space-y-4">
             <CartSummary 
               subtotal={subtotal}
-              deliveryFee={restaurantInfo.deliveryFee}
+              deliveryFee={deliveryFee}
               total={total}
               onClearCart={handleClearCart}
             />
 
-            {subtotal > 0 && (
-              <DeliveryEstimation restaurantName={restaurantInfo.name} />
+            {subtotal > 0 && restaurantInfo && (
+              <DeliveryEstimation 
+                restaurantName={restaurantInfo.name} 
+                deliveryTime={restaurantInfo.deliveryTime || 20} 
+              />
             )}
           </div>
 
