@@ -1,11 +1,11 @@
-import { Controller, Get, Post, Body, Param, Patch } from '@nestjs/common';
-import { CreateOrderDto } from './dto/create-order.dto';
-import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
+import { Controller, Get, Post, Patch, Body, Param } from '@nestjs/common';
 import { OrderService } from './order.service';
+import { CreateOrderDto } from './dto/create-order.dto';
+import { UpdateOrderStatusDto } from './dto/update-order-status.dto'; // Importamos tu DTO del paréntesis
 
-@Controller('orders') // Prefijo de la ruta: /orders
+@Controller('orders')
 export class OrderController {
-  constructor(private readonly orderService: OrderService) { }
+  constructor(private readonly orderService: OrderService) {}
 
   @Post()
   create(@Body() createOrderDto: CreateOrderDto) {
@@ -17,7 +17,7 @@ export class OrderController {
     return this.orderService.findAll();
   }
 
-  // 👤 Lista solo las órdenes del usuario autenticado (/orders/user/:userId)
+  // 👤 Sincronizado con el Gateway: Obtiene el historial del usuario
   @Get('user/:userId')
   findByUser(@Param('userId') userId: string) {
     return this.orderService.findByUser(userId);
@@ -28,8 +28,9 @@ export class OrderController {
     return this.orderService.findOne(id);
   }
 
+  // 🔄 Sincronizado con el Gateway: Actualiza el estado usando tu validador estricto IsIn()
   @Patch(':id/status')
-  async updateStatus(
+  updateStatus(
     @Param('id') id: string,
     @Body() updateOrderStatusDto: UpdateOrderStatusDto,
   ) {
