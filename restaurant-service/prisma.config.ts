@@ -1,5 +1,7 @@
 /// <reference types="node" />
+// @ts-ignore
 import "dotenv/config";
+// @ts-ignore
 import { defineConfig } from "prisma/config";
 
 const config: any = {
@@ -16,4 +18,5 @@ if (process.argv.some((arg: string) => arg.includes('prisma') || arg.includes('d
   config.datasource.url = process.env["DIRECT_URL"];
 }
 
-export default defineConfig(config);
+// @ts-ignore
+export default defineConfig ? defineConfig(config) : config;

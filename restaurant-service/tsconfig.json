@@ -7,7 +7,8 @@
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
     "target": "ES2022",
-    "rootDir": "src",                        // 🎯 Enfoca la compilación solo en tu código fuente
+    // 🌟 CAMBIO AQUÍ: Permitir múltiples raíces para que acepte prisma.config.ts
+    "rootDirs": ["src", "."], 
     "outDir": "./dist",
     "sourceMap": true,
     "incremental": true,
@@ -16,11 +17,12 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": true,
-    "noFallthroughCasesInSwitch": false
-    // 🌟 Eliminamos "paths" y "types" para que TS busque de forma natural en las raíces superiores
+    "noFallthroughCasesInSwitch": false,
+    "types": ["node"]
   },
   "include": [
-    "src/**/*"                               // 🎯 Solo compila e inspecciona lo que está dentro de src
+    "src/**/*",
+    "prisma.config.ts"
   ],
   "exclude": [
     "node_modules",

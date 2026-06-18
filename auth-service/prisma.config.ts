@@ -1,7 +1,9 @@
+/// <reference types="node" />
+// @ts-ignore
 import "dotenv/config";
+// @ts-ignore
 import { defineConfig } from "prisma/config";
 
-// Usamos un casteo "as any" para saltarnos el validador estricto de tipos de Prisma 7
 const config: any = {
   schema: "prisma/schema.prisma",
   migrations: {
@@ -12,9 +14,9 @@ const config: any = {
   }
 };
 
-// Si estamos ejecutando un comando de consola (como db push), inyectamos la DIRECT_URL en la configuración
-if (process.argv.some(arg => arg.includes('prisma') || arg.includes('db') || arg.includes('push'))) {
+if (process.argv.some((arg: string) => arg.includes('prisma') || arg.includes('db') || arg.includes('push'))) {
   config.datasource.url = process.env["DIRECT_URL"];
 }
 
-export default defineConfig(config);
+// @ts-ignore
+export default defineConfig ? defineConfig(config) : config;

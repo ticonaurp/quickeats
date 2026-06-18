@@ -34,31 +34,27 @@ services:
     networks:
       - quickeats_network
 
-  # Auth Service (Puerto 3002 - Conectado a Supabase)
+  # Auth Service (Puerto 3002 - Conectado a Supabase de forma estable)
   auth-service:
     build:
       context: ./auth-service
       dockerfile: Dockerfile
-      target: builder
+      target: builder 
     container_name: quickeats_auth
     restart: unless-stopped
     ports:
       - "3002:3002"
     env_file:
       - ./auth-service/.env
-    environment:
-      - NODE_TLS_REJECT_UNAUTHORIZED=0
-      - TZ=America/Lima
     volumes:
-      - ./auth-service:/app:z
+      - ./auth-service:/app:z 
       - /app/node_modules
-      - /etc/localtime:/etc/localtime:ro
-    # 🔑 AUTOMATIZACIÓN EN CADENA: Genera tipos, empuja cambios a la BD y arranca NestJS solo
-    command: sh -c "npx prisma generate && npx prisma db push && npm run start:dev"
+    # 🌟 CAMBIO: Ejecución explícita del binario local de Nest
+    command: sh -c "npx prisma generate && ./node_modules/.bin/nest start --watch"
     networks:
       - quickeats_network
 
-  # Restaurant Service (Puerto 3003 - Modo Desarrollo Vivo)
+  # Restaurant Service (Puerto 3003 - Con volumen de desarrollo también)
   restaurant-service:
     build:
       context: ./restaurant-service
@@ -74,15 +70,14 @@ services:
       - NODE_TLS_REJECT_UNAUTHORIZED=0
       - TZ=America/Lima
     volumes:
-      - ./restaurant-service:/app:z 
+      - ./restaurant-service:/app:z
       - /app/node_modules
-      - /etc/localtime:/etc/localtime:ro
-    # 🔑 AUTOMATIZACIÓN EN CADENA: Resuelve el error de fields inexistentes de inmediato
-    command: sh -c "npx prisma generate && npx prisma db push && npm run start:dev"
+    # 🌟 CAMBIO: Homologamos el comportamiento de desarrollo vivo
+    command: sh -c "npx prisma generate && ./node_modules/.bin/nest start --watch"
     networks:
       - quickeats_network
 
-  # Order Service (Puerto 3004 - Modo Desarrollo Vivo)
+  # Order Service (Puerto 3004)
   order-service:
     build:
       context: ./order-service
@@ -100,12 +95,12 @@ services:
     volumes:
       - ./order-service:/app:z 
       - /app/node_modules
-      - /etc/localtime:/etc/localtime:ro
-    command: sh -c "npx prisma generate && npx prisma db push && npm run start:dev"
+    # 🌟 CAMBIO: Ejecución explícita para evitar que falle con npx o npm run
+    command: sh -c "npx prisma generate && ./node_modules/.bin/nest start --watch"
     networks:
       - quickeats_network
 
-  # Notification Service (Puerto 3005 - Modo Desarrollo Vivo)
+  # Notification Service (Puerto 3005)
   notification-service:
     build:
       context: ./notification-service
@@ -123,8 +118,8 @@ services:
     volumes:
       - ./notification-service:/app:z
       - /app/node_modules
-      - /etc/localtime:/etc/localtime:ro
-    command: sh -c "npx prisma generate && npx prisma db push && npm run start:dev"
+    # 🌟 CAMBIO: Mismo comando directo al ejecutable de Linux
+    command: sh -c "npx prisma generate && ./node_modules/.bin/nest start --watch"
     networks:
       - quickeats_network
 

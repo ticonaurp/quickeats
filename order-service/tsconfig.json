@@ -11,7 +11,7 @@
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
     "target": "ES2023",
-    "rootDir": "src",
+    "rootDirs": ["src", "."],
     "sourceMap": true,
     "outDir": "./dist",
     "incremental": true,
@@ -20,10 +20,12 @@
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": false,
     "strictBindCallApply": false,
-    "noFallthroughCasesInSwitch": false
+    "noFallthroughCasesInSwitch": false,
+    "types": ["node"] // 🌟 Forzar tipos de Node
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "prisma.config.ts" // 🌟 Incluido para que TS lo lea en la raíz
   ],
   "exclude": [
     "node_modules",
