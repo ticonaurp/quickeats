@@ -16,14 +16,12 @@ export function LoginForm() {
     setLoading(true);
 
     try {
-      // 🌐 Obtenemos la URL del API Gateway de forma dinámica
-      // Si estás en producción, usará la URL de Render. Si estás en local, usará localhost:3001
+      // 🌐 URL del API Gateway dinámica
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
-// 🔑 AGREGA ESTO PARA DETECTAR EL DESTINO REAL:
-console.log("🚀 Intentando conectar al backend en:", `${baseUrl}/auth/login`);
+      console.log("🚀 Intentando conectar al backend en:", `${baseUrl}/auth/login`);
 
-const response = await fetch(`${baseUrl}/auth/login`, {
+      const response = await fetch(`${baseUrl}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -37,13 +35,16 @@ const response = await fetch(`${baseUrl}/auth/login`, {
         toast.success(`¡Bienvenido de nuevo, ${data.name || 'Usuario'}!`);
 
         localStorage.setItem('token', data.access_token);
-        localStorage.setItem('role', data.role);
+        
+        // 🛡️ Normalizamos el rol a mayúsculas para evitar fallos de formato ('user' vs 'USER')
+        const userRole = (data.role || 'USER').toUpperCase();
+        localStorage.setItem('role', userRole);
 
-        // 🔑 SOLUCIÓN: Usamos rutas absolutas con '/' para evitar fallos de Next.js
-        if (data.role === 'ADMIN') {
+        // 🔑 REDIRECCIÓN BLINDADA: Evita la creación de rutas corruptas en el LocalStorage
+        if (userRole === 'ADMIN') {
           router.push('/admin'); 
         } else {
-          router.push('/user'); // 🍔 Te redirige de forma segura
+          router.push('/user'); // 🍔 Te redirige a la carpeta física app/user existente en tu disco
         }
       } else {
         toast.error(data.message || 'Error al iniciar sesión. Revisa tus credenciales.');

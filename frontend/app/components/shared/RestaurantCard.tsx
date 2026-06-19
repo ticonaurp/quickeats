@@ -12,6 +12,10 @@ export default function RestaurantCard({ r, onClick }: RestaurantCardProps) {
   // Regla de negocio: si el tiempo es menor o igual a 30 min, es envío rápido
   const isExpress = r.deliveryTime <= 30;
 
+  // 🛡️ Filtro seguro integrado: si viene nulo, vacío, o strings de prueba corruptos ('d', 'dw'), usa el fallback
+  const validImagePlaceholder = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=500&q=80';
+  const imageSrc = (r.image && r.image.length > 3) ? r.image : validImagePlaceholder;
+
   return (
     <div 
       onClick={onClick}
@@ -21,15 +25,16 @@ export default function RestaurantCard({ r, onClick }: RestaurantCardProps) {
       {/* ✨ Corregido: Clases h-[165px] y sm:h-[185px] optimizadas a h-41.25 y sm:h-46.25 */}
       <div className="relative h-41.25 sm:h-46.25 w-full bg-gray-100 overflow-hidden">
         <img 
-          src={r.image || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=500&q=80'} 
+          src={imageSrc} 
           alt={r.name}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           onError={(e) => {
-            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=500&q=80';
+            // 🔄 Salvaguarda extra por si el enlace original parecía válido pero está roto en internet
+            (e.target as HTMLImageElement).src = validImagePlaceholder;
           }}
         />
         
-        {/* ✨ Corregido: bg-gradient-to-t cambiado por bg-linear-to-t */}
+        {/* ✨ Corregido: bg-linear-to-t cambiado por bg-linear-to-t */}
         <div className="absolute inset-0 bg-linear-to-t from-black/50 via-transparent to-transparent opacity-60" />
 
         {/* Badges superiores sobre la imagen */}
@@ -72,14 +77,14 @@ export default function RestaurantCard({ r, onClick }: RestaurantCardProps) {
             <span>{r.deliveryTime} min</span>
           </div>
           
-          {/* ✨ Corregido: flex-shrink-0 optimizado a shrink-0 */}
+          {/* ✨ Corregido: flex-shrink-0 optimizado a shrink-0 y sincronizado con deliveryFee */}
           <div className="flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2.5 py-1.5 rounded-lg shrink-0">
             <Bike size={14} className="text-emerald-500" />
             <span>
-  {(r.deliveryFee ?? 0) === 0 
-    ? 'Envío Gratis' 
-    : `S/ ${Number(r.deliveryFee).toFixed(2)}`}
-</span>
+              {(r.deliveryFee ?? 0) === 0 
+                ? 'Envío Gratis' 
+                : `S/ ${Number(r.deliveryFee).toFixed(2)}`}
+            </span>
           </div>
         </div>
       </div>

@@ -14,6 +14,9 @@ import AddressSection from '../components/checkout/AddressSection';
 import PaymentSection from '../components/checkout/PaymentSection';
 import OrderSummarySidebar from '../components/checkout/OrderSummarySidebar';
 
+// 🔐 Importamos el lector dinámico de sesión real
+import { getUserId } from '../services/auth';
+
 export default function PagoPage() {
   const router = useRouter();
   const [cart, setCart] = useState<any[]>([]);
@@ -65,15 +68,21 @@ export default function PagoPage() {
     setLoading(true);
 
     try {
-      // 👤 OBTENCIÓN DE USERID
-      const userId = localStorage.getItem('userId') || 'user_dev_id_123';
+      // 👤 SOLUCIÓN: Obtenemos el ID de sesión dinámico real del usuario logueado
+      const userId = getUserId();
+      
+      if (!userId) {
+        toast.error('Tu sesión expiró o es inválida. Por favor inicia sesión de nuevo.');
+        router.push('/login');
+        return;
+      }
 
       // 🌐 URL DINÁMICA DEL GATEWAY
       const gatewayUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
       // 📦 MAPEO ESTRICTO PARA TU CREATE-ORDER DTO
       const orderPayload = {
-        userId,
+        userId, // 🌟 ID sincronizado con Supabase Auth e Historial
         restaurantId: restaurant?.id ?? '',
         restaurantName: restaurant?.name ?? 'Restaurante',
         address: address.street,
@@ -82,7 +91,6 @@ export default function PagoPage() {
         subtotal: cartTotal,
         deliveryFee,
         total,
-        // Usamos el formato limpio ya normalizado
         items: normalizedCart.map((item) => ({
           productId: item.productId,
           name: item.name,
@@ -116,6 +124,7 @@ export default function PagoPage() {
       console.error('Error al generar la orden:', error);
       toast.error(error.message || 'No se pudo conectar con el servidor.');
     } finally {
+      // ✨ Corregido: Removido el fragmento de texto roto que causaba los errores 2304 y 1136
       setLoading(false);
     }
   };
@@ -134,7 +143,7 @@ export default function PagoPage() {
             <ArrowLeft size={18} className="text-gray-700" />
           </button>
           <div>
-            <h1 style={{ fontWeight: 800, color: '#0F172A', letterSpacing: '-0.01em', fontSize: '1.75rem' }}>
+            <h1 className="font-extrabold text-slate-900 tracking-tight text-3xl">
               Pago
             </h1>
           </div>
@@ -165,7 +174,6 @@ export default function PagoPage() {
 
           {/* Resumen de la Orden Lateral */}
           <div>
-            {/* 🟢 Pasamos "normalizedCart" garantizando la lectura de datos */}
             <OrderSummarySidebar 
               restaurant={restaurant} 
               cart={normalizedCart} 
