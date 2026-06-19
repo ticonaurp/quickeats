@@ -1,19 +1,37 @@
+import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { PrismaClient } from '@prisma/client'; 
+import { Pool } from 'pg'; 
+import { PrismaPg } from '@prisma/adapter-pg'; 
+import * as fs from 'fs';
+import * as path from 'path';
 import * as dotenv from 'dotenv';
+
 dotenv.config();
 
-import { Injectable, OnModuleInit } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { Pool } from 'pg';
-
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit {
-  // Dejamos el cliente apuntando a 'this' directamente
+export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+  //  Mantenemos tu propiedad por si otros archivos del microservicio la usan de puente
   public client = this;
 
   constructor() {
+    const connectionString = process.env.DATABASE_URL;
+
+    // Calculamos la ruta absoluta interna del contenedor para el certificado
+    const containerCertPath = '/app/supabase-ca.crt';
+    const localCertPath = path.join(process.cwd(), 'supabase-ca.crt');
+    const certPath = fs.existsSync(containerCertPath) ? containerCertPath : localCertPath;
+
+    // Configuramos el objeto SSL para el Pool nativo de Node-Postgres
+    const sslConfig = fs.existsSync(certPath)
+      ? {
+          rejectUnauthorized: true,
+          ca: fs.readFileSync(certPath, 'utf8'),
+        }
+      : false;
+
     const pool = new Pool({ 
-      connectionString: process.env.DATABASE_URL 
+      connectionString,
+      ssl: sslConfig //  Inyección crucial de TLS
     });
 
     const adapter = new PrismaPg(pool);
@@ -21,6 +39,10 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
   }
 
   async onModuleInit() {
-    await this.$connect();
+    await this.$connect(); 
+  }
+
+  async onModuleDestroy() {
+    await this.$disconnect();
   }
 }
