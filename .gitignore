@@ -1,13 +1,21 @@
+# Dependencias
 node_modules/
-**/node_modules/
+
+# Builds y temporales
 dist/
-**/dist/
 .next/
-**/.next/
+.build/
 out/
-**/tsconfig.build.tsbuildinfo
+*.tsbuildinfo
+
+# Entorno
 .env
-**/.env
 .env.local
+.env.*
+
+# Git
+.git
+
+# Sistema
 .DS_Store
 Thumbs.db
