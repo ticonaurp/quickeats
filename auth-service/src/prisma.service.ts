@@ -2,6 +2,8 @@ import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pkgPg from 'pg'; 
+import * as fs from 'fs';   // 🌟 NUEVO
+import * as path from 'path'; // 🌟 NUEVO
 
 const { Pool } = pkgPg;
 
@@ -21,10 +23,28 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       }
     }
 
-    // 2. Creamos el pool inyectando el search_path de Supabase
+    // 🌟 MODIFICACIÓN: Forzamos la ruta absoluta de Docker (/app/) con fallback local
+    const containerCertPath = '/app/supabase-ca.crt';
+    const localCertPath = path.join(process.cwd(), 'supabase-ca.crt');
+    
+    // Si existe en el contenedor, usa esa; si no, usa la ruta local
+    const certPath = fs.existsSync(containerCertPath) ? containerCertPath : localCertPath;
+
+    const sslConfig = fs.existsSync(certPath)
+      ? {
+          rejectUnauthorized: true, // 🛡️ Activamos la verificación estricta
+          ca: fs.readFileSync(certPath, 'utf8'),
+        }
+      : false; // Fallback por si localmente usas una BD Docker sin SSL
+
+    // 🔬 LOG DE CONTROL: Esto te dirá en la terminal si Docker encontró el archivo con éxito
+    console.log(`[Prisma SSL Auth] ¿Certificado encontrado?: ${fs.existsSync(certPath)}. Ruta: ${certPath}`);
+
+    // 2. Creamos el pool inyectando el search_path de Supabase y el SSL
     const pool = new Pool({ 
       connectionString,
-      options: `-c search_path=${schema}`
+      options: `-c search_path=${schema}`,
+      ssl: sslConfig // 🌟 NUEVO: Inyectamos la seguridad TLS
     });
     
     const adapter = new PrismaPg(pool);

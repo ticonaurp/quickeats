@@ -1,5 +1,4 @@
 services:
-  # La Base de Datos Local (Puerto externo 5433 para liberar el 5432)
   postgres_db:
     image: postgres:15-alpine
     container_name: quickeats_postgres
@@ -15,7 +14,6 @@ services:
     networks:
       - quickeats_network
 
-  # API Gateway (Puerto 3001)
   gateway:
     build:
       context: ./gateway
@@ -34,7 +32,6 @@ services:
     networks:
       - quickeats_network
 
-  # Auth Service (Puerto 3002 - Conectado a Supabase de forma estable)
   auth-service:
     build:
       context: ./auth-service
@@ -46,15 +43,18 @@ services:
       - "3002:3002"
     env_file:
       - ./auth-service/.env
+    environment:
+      - TZ=America/Lima
+      - PGSSLMODE=verify-full
+      - PGSSLROOTCERT=/app/supabase-ca.crt
     volumes:
       - ./auth-service:/app:z 
       - /app/node_modules
-    # 🌟 CAMBIO: Ejecución explícita del binario local de Nest
+      - ./auth-service/supabase-ca.crt:/app/supabase-ca.crt:z
     command: sh -c "npx prisma generate && ./node_modules/.bin/nest start --watch"
     networks:
       - quickeats_network
 
-  # Restaurant Service (Puerto 3003 - Con volumen de desarrollo también)
   restaurant-service:
     build:
       context: ./restaurant-service
@@ -67,17 +67,17 @@ services:
     env_file:
       - ./restaurant-service/.env
     environment:
-      - NODE_TLS_REJECT_UNAUTHORIZED=0
       - TZ=America/Lima
+      - PGSSLMODE=verify-full
+      - PGSSLROOTCERT=/app/supabase-ca.crt
     volumes:
       - ./restaurant-service:/app:z
       - /app/node_modules
-    # 🌟 CAMBIO: Homologamos el comportamiento de desarrollo vivo
+      - ./restaurant-service/supabase-ca.crt:/app/supabase-ca.crt:z
     command: sh -c "npx prisma generate && ./node_modules/.bin/nest start --watch"
     networks:
       - quickeats_network
 
-  # Order Service (Puerto 3004)
   order-service:
     build:
       context: ./order-service
@@ -90,17 +90,17 @@ services:
     env_file:
       - ./order-service/.env
     environment:
-      - NODE_TLS_REJECT_UNAUTHORIZED=0
       - TZ=America/Lima
+      - PGSSLMODE=verify-full
+      - PGSSLROOTCERT=/app/supabase-ca.crt
     volumes:
       - ./order-service:/app:z 
       - /app/node_modules
-    # 🌟 CAMBIO: Ejecución explícita para evitar que falle con npx o npm run
+      - ./order-service/supabase-ca.crt:/app/supabase-ca.crt:z
     command: sh -c "npx prisma generate && ./node_modules/.bin/nest start --watch"
     networks:
       - quickeats_network
 
-  # Notification Service (Puerto 3005)
   notification-service:
     build:
       context: ./notification-service
@@ -113,12 +113,13 @@ services:
     env_file:
       - ./notification-service/.env
     environment:
-      - NODE_TLS_REJECT_UNAUTHORIZED=0
       - TZ=America/Lima
+      - PGSSLMODE=verify-full
+      - PGSSLROOTCERT=/app/supabase-ca.crt
     volumes:
       - ./notification-service:/app:z
       - /app/node_modules
-    # 🌟 CAMBIO: Mismo comando directo al ejecutable de Linux
+      - ./notification-service/supabase-ca.crt:/app/supabase-ca.crt:z
     command: sh -c "npx prisma generate && ./node_modules/.bin/nest start --watch"
     networks:
       - quickeats_network

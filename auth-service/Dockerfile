@@ -12,7 +12,7 @@ RUN apk add --no-cache tzdata
 WORKDIR /app
 COPY package*.json ./
 
-# Instalación limpia de dependencias de producción (incluye dotenv si ya está en dependencies)
+# Instalación limpia de dependencias de producción
 RUN npm install --only=production
 
 # Copiamos lo compilado y lo necesario de Prisma
@@ -20,9 +20,10 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/prisma ./prisma
-
-# Copiar el archivo de configuración de prisma a la raíz de ejecución
 COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
+
+# 🌟 NUEVO: Copiar el certificado de seguridad CA a la raíz del runner
+COPY --from=builder /app/supabase-ca.crt ./supabase-ca.crt 
 
 EXPOSE 3002
 CMD ["node", "dist/main.js"]
