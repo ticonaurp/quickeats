@@ -14,4 +14,4 @@ RUN npm install --only=production
 COPY --from=builder /app/dist ./dist
 
 EXPOSE 3001
-CMD ["node", "dist/main"]
+CMD ["node", "dist/main.js"]
