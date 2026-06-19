@@ -45,12 +45,28 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
     steps:
-      - name: Disparar Deploy Hooks en Render
+      - name: Descargar Código para Docker
+        uses: actions/checkout@v4
+
+      - name: Iniciar sesión en Azure Container Registry (ACR)
+        uses: azure/docker-login@v2
+        with:
+          login-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - name: Construir y Subir Imagen de Auth Service a Azure
+        run: |
+          docker build -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/auth-service:latest ./auth-service
+          docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/auth-service:latest
+
+      - name: Disparar Deploy Hooks en Render (Resto de Servicios)
         run: |
           echo "CI Aprobada. Solicitando actualización de infraestructura a Render..."
           curl -X POST "${{ secrets.RENDER_FRONTEND_HOOK }}"
           curl -X POST "${{ secrets.RENDER_GATEWAY_HOOK }}"
-          curl -X POST "${{ secrets.RENDER_AUTH_HOOK }}"
+          # El auth service ahora se despliega en Azure Container Apps, por eso desactivamos su gancho de Render:
+          # curl -X POST "${{ secrets.RENDER_AUTH_HOOK }}"
           curl -X POST "${{ secrets.RENDER_RESTAURANT_HOOK }}"
           curl -X POST "${{ secrets.RENDER_ORDER_HOOK }}"
           curl -X POST "${{ secrets.RENDER_NOTIFICATION_HOOK }}"
