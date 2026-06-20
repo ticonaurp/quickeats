@@ -1,77 +1,118 @@
+'use client';
+
 import Link from 'next/link';
-import { ArrowLeft, Sparkles } from 'lucide-react';
-import { Navbar } from './../components/Navbar';
-import { LoginForm } from './../components/LoginForm';
+import { ArrowLeft, ShieldCheck } from 'lucide-react';
+import { Navbar } from '../components/Navbar';
+import { LoginForm } from '../components/LoginForm';
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans antialiased text-slate-900">
-      {/* Navbar superior integrada */}
+    <div className="min-h-screen bg-slate-50 font-sans antialiased text-slate-900 overflow-hidden">
+      <style jsx global>{`
+        @keyframes marquee-fast {
+          0% { transform: translateX(0%); }
+          100% { transform: translateX(-50%); }
+        }
+        @keyframes marquee-reverse {
+          0% { transform: translateX(-50%); }
+          100% { transform: translateX(0%); }
+        }
+        @keyframes marquee-slow {
+          0% { transform: translateX(0%); }
+          100% { transform: translateX(-50%); }
+        }
+        .animate-wave-fast { animation: marquee-fast 24s linear infinite; }
+        .animate-wave-reverse { animation: marquee-reverse 28s linear infinite; }
+        .animate-wave-slow { animation: marquee-slow 34s linear infinite; }
+      `}</style>
+
       <Navbar />
 
-      {/* Contenedor de Pantalla Dividida */}
-      <main className="flex flex-1 flex-col lg:flex-row relative">
-        
-        {/* 🎨 PANEL IZQUIERDO: Bloque Premium Inmersivo */}
-        <div className="hidden lg:flex w-1/2 bg-linear-to-br from-slate-950 via-slate-900 to-emerald-950 items-center justify-center p-16 relative overflow-hidden border-r border-slate-800">
-          {/* Patrón de fondo tecnológico sutil */}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(34,197,94,0.12)_1px,transparent_1px)] bg-size-[20px_20px] opacity-70" />
-          <div className="absolute -top-40 -right-40 w-125 h-125 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none animate-pulse" />
-          <div className="absolute -bottom-20 -left-20 w-87.5 h-87.5 bg-green-500/5 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="text-center relative z-10 max-w-md space-y-6">
-            {/* Contenedor del Logo Q con Glassmorphism Premium */}
-            <div className="w-24 h-24 bg-white/[0.07] backdrop-blur-md rounded-[28px] flex items-center justify-center mx-auto mb-8 border border-white/10 shadow-2xl relative group transition-transform duration-500 hover:scale-105">
-              <div className="absolute inset-0 bg-linear-to-tr from-green-500/20 to-transparent rounded-[28px] opacity-0 group-hover:opacity-100 transition-opacity" />
-              <span className="font-black text-5xl bg-linear-to-b from-white to-slate-200 bg-clip-text text-transparent font-poppins tracking-tighter select-none">
-                Q
-              </span>
-            </div>
+      <main className="flex min-h-[calc(100vh-4rem)] relative">
+        {/* === PANEL IZQUIERDO - VERSIÓN LIGHT MANGO === */}
+        <div className="hidden lg:flex lg:w-5/12 xl:w-1/2 bg-slate-100/60 relative overflow-hidden items-center justify-center border-r border-slate-200">
+          
+          {/* Sutil resplandor de fondo color mango (muy suave) */}
+          <div className="absolute inset-0 bg-[radial-gradient(at_30%_30%,rgba(245,158,11,0.05)_0%,transparent_60%)]" />
+          
+          <div className="relative w-full -rotate-[4deg] scale-[1.12] flex flex-col gap-5">
             
-            {/* Textos de Bienvenida */}
-            <h2 className="text-4xl font-black text-white font-poppins tracking-tight leading-tight">
-              Tus antojos,<br />
-              <span className="bg-linear-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">a un clic de distancia.</span>
-            </h2>
-            <p className="text-slate-400 text-base font-medium leading-relaxed max-w-sm mx-auto">
-              Inicia sesión para acceder a tus restaurantes favoritos, realizar un seguimiento en tiempo real y disfrutar de ofertas exclusivas de Lima.
-            </p>
+            {/* Fila 1 - Comidas en Gris Tenue */}
+            <div className="overflow-hidden whitespace-nowrap flex min-w-full">
+              <div className="animate-wave-fast flex shrink-0 text-5xl xl:text-6xl font-black tracking-[-2px] text-slate-300 uppercase select-none">
+                BURGER • CEVICHE • PIZZA • LOMO • SUSHI • TACOS • MAKI • POLLO • CHIFA •&nbsp;
+              </div>
+              <div className="animate-wave-fast flex shrink-0 text-5xl xl:text-6xl font-black tracking-[-2px] text-slate-300 uppercase select-none">
+                BURGER • CEVICHE • PIZZA • LOMO • SUSHI • TACOS • MAKI • POLLO • CHIFA •&nbsp;
+              </div>
+            </div>
+
+            {/* Fila 2 - Marca con Gradiente Mango Enérgico */}
+            <div className="overflow-hidden whitespace-nowrap flex min-w-full py-3 bg-amber-500/[0.05] border-y border-amber-500/10">
+              <div className="animate-wave-reverse flex shrink-0 text-7xl xl:text-8xl font-black tracking-[-3px] bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 bg-clip-text text-transparent uppercase select-none">
+                QUICKEATS • LIVE • SPEED • PREMIUM •&nbsp;
+              </div>
+              <div className="animate-wave-reverse flex shrink-0 text-7xl xl:text-8xl font-black tracking-[-3px] bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 bg-clip-text text-transparent uppercase select-none">
+                QUICKEATS • LIVE • SPEED • PREMIUM •&nbsp;
+              </div>
+            </div>
+
+            {/* Fila 3 - Outline Mango Sutil */}
+            <div className="overflow-hidden whitespace-nowrap flex min-w-full">
+              <div className="animate-wave-slow flex shrink-0 text-6xl xl:text-7xl font-black tracking-[-2px] text-transparent uppercase select-none" 
+                   style={{ WebkitTextStroke: '1.5px rgba(245, 158, 11, 0.25)' }}>
+                DELIVERY • INSTANT • CLOUD • NEXT • NEST • PRISMA •&nbsp;
+              </div>
+              <div className="animate-wave-slow flex shrink-0 text-6xl xl:text-7xl font-black tracking-[-2px] text-transparent uppercase select-none" 
+                   style={{ WebkitTextStroke: '1.5px rgba(245, 158, 11, 0.25)' }}>
+                DELIVERY • INSTANT • CLOUD • NEXT • NEST • PRISMA •&nbsp;
+              </div>
+            </div>
+          </div>
+
+          {/* Branding inferior adaptado */}
+          <div className="absolute bottom-10 left-10 flex items-center gap-2.5">
+            <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+            <span className="text-slate-400 text-xs font-mono tracking-[1.5px]">UI V2.1 – MANGO ENGINE</span>
           </div>
         </div>
 
-        {/* 📋 PANEL DERECHO: Formulario de Login Limpio */}
-        <div className="flex-1 flex flex-col justify-center px-6 sm:px-16 lg:px-24 py-16 bg-white relative">
-          <div className="max-w-md w-full mx-auto space-y-8">
+        {/* === PANEL DERECHO - FORMULARIO === */}
+        <div className="flex-1 flex items-center justify-center bg-white px-6 py-12 lg:py-0">
+          <div className="w-full max-w-md">
             
-            {/* Enlace de regreso con micro-interacción */}
-            <div>
-              <Link 
-                href="/" 
-                className="group inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-800 transition-colors font-semibold"
-              >
-                <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> 
-                Volver al inicio
-              </Link>
-            </div>
+            {/* Botón Volver */}
+            <Link 
+              href="/" 
+              className="group inline-flex items-center gap-2 text-slate-400 hover:text-slate-600 mb-6 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+              <span className="text-sm font-medium">Volver al Inicio</span>
+            </Link>
 
-            {/* Encabezados del Formulario */}
-            <div className="space-y-2.5">
-              <h1 className="font-black text-4xl text-slate-900 font-poppins tracking-tight flex items-center gap-2">
-                Iniciar sesión
+            <div className="mb-8">
+              <h1 className="text-4xl xl:text-5xl font-black tracking-tight text-slate-900 mb-2">
+                Bienvenido de nuevo
               </h1>
-              <p className="text-slate-500 text-sm font-medium">
-                ¿Nuevo en QuickEats?{' '}
-                <Link href="/register" className="font-bold text-green-600 hover:text-green-500 transition-colors underline underline-offset-4 decoration-green-500/30 hover:decoration-green-500">
-                  Regístrate gratis
-                </Link>
+              <p className="text-slate-500 text-base">
+                Inicia sesión y pide como un rey
               </p>
             </div>
-            
-            {/* Contenedor del Formulario Modular */}
-            <div className="bg-white rounded-3xl border border-transparent sm:border-slate-100 sm:p-2 sm:shadow-xs">
+
+            {/* Contenedor del formulario */}
+            <div className="bg-white rounded-3xl shadow-2xl shadow-slate-100 border border-slate-100 p-1">
               <LoginForm />
             </div>
 
+            {/* Señales de confianza */}
+            <div className="flex items-center justify-center gap-4 mt-8 text-xs text-slate-400 font-medium">
+              <div className="flex items-center gap-1">
+                <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                <span>SSL Seguro</span>
+              </div>
+              <span>•</span>
+              <div>🔒 Autenticación Supabase</div>
+            </div>
           </div>
         </div>
       </main>
