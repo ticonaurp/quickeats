@@ -7,11 +7,10 @@ on:
     branches: [ develop ]
 
 jobs:
-  # ETAPA 1: INTEGRACIÓN CONTINUA (CI) 
   build-and-validate:
     runs-on: ubuntu-latest
     steps:
-      - name: Descargar Código
+      - name: Descargar Codigo
         uses: actions/checkout@v4
 
       - name: Configurar Node.js v20
@@ -39,34 +38,64 @@ jobs:
           echo "Validando Frontend..."
           cd ../frontend && npm install && npm run build --if-present
 
-  # ETAPA 2: DESPLIEGUE CONTINUO (CD) 
   deploy-to-staging:
     needs: build-and-validate
     if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
     steps:
-      - name: Descargar Código para Docker
+      - name: Descargar Codigo para Servidores
         uses: actions/checkout@v4
 
-      - name: Iniciar sesión en Azure Container Registry (ACR)
+      - name: Configurar Node.js v20 para Frontend
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Compilar Frontend (Next.js)
+        run: |
+          cd frontend
+          npm install
+          npm run build
+
+      - name: Configurar credenciales de AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+
+      - name: Desplegar archivos a AWS S3
+        run: |
+          aws s3 sync frontend/out s3://quickeats-frontend-prod --delete
+
+      - name: Iniciar sesion en Azure Container Registry (ACR)
         uses: azure/docker-login@v2
         with:
           login-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
-      - name: Construir y Subir Imagen de Auth Service a Azure
+      - name: Construir y Subir Gateway
+        run: |
+          docker build -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/gateway:latest ./gateway
+          docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/gateway:latest
+
+      - name: Construir y Subir Auth Service
         run: |
           docker build -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/auth-service:latest ./auth-service
           docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/auth-service:latest
 
-      - name: Disparar Deploy Hooks en Render (Resto de Servicios)
+      - name: Construir y Subir Restaurant Service
         run: |
-          echo "CI Aprobada. Solicitando actualización de infraestructura a Render..."
-          curl -X POST "${{ secrets.RENDER_FRONTEND_HOOK }}"
-          curl -X POST "${{ secrets.RENDER_GATEWAY_HOOK }}"
-          # El auth service ahora se despliega en Azure Container Apps, por eso desactivamos su gancho de Render:
-          # curl -X POST "${{ secrets.RENDER_AUTH_HOOK }}"
-          curl -X POST "${{ secrets.RENDER_RESTAURANT_HOOK }}"
-          curl -X POST "${{ secrets.RENDER_ORDER_HOOK }}"
-          curl -X POST "${{ secrets.RENDER_NOTIFICATION_HOOK }}"
+          docker build -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/restaurant-service:latest ./restaurant-service
+          docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/restaurant-service:latest
+
+      - name: Construir y Subir Order Service
+        run: |
+          docker build -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/order-service:latest ./order-service
+          docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/order-service:latest
+
+      - name: Construir y Subir Notification Service
+        run: |
+          docker build -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/notification-service:latest ./notification-service
+          docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/notification-service:latest
