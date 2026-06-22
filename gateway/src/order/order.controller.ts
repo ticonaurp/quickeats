@@ -24,18 +24,30 @@ export class OrderController {
     }
   }
 
-  @Get()
-  async findAllOrders(@Res() res: Response) {
-    try {
-      const response = await fetch(this.ORDER_SERVICE_URL);
-      const data = await response.json();
-      return res.status(response.status).json(data);
-    } catch (error) {
-      return res.status(HttpStatus.BAD_GATEWAY).json({
-        message: 'No se pudo conectar con el microservicio de órdenes.',
-      });
-    }
+  // Ejemplo de optimización para tus métodos en gateway/src/order/order.controller.ts
+
+@Get()
+async findAllOrders(@Res() res: Response) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 7000); // ⏱️ 7 segundos de tolerancia
+
+  try {
+    const response = await fetch(this.ORDER_SERVICE_URL, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    
+    const data = await response.json();
+    return res.status(response.status).json(data);
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+    const isTimeout = error.name === 'AbortError';
+    
+    return res.status(HttpStatus.BAD_GATEWAY).json({
+      message: isTimeout 
+        ? 'El microservicio de órdenes tardó demasiado en responder (Timeout).' 
+        : 'No se pudo conectar con el microservicio de órdenes.',
+    });
   }
+}
 
   // 👤 Reenvía la consulta de órdenes filtradas por usuario
   @Get('user/:userId')

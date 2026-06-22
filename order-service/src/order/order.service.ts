@@ -64,15 +64,21 @@ export class OrderService {
 
   // 🔄 NUEVO: Actualiza el estado de la orden (PENDING -> PREPARING, etc.)
   async updateStatus(id: string, status: string) {
-    // Verificamos primero si existe la orden
-    await this.findOne(id);
-
-    return this.prisma.order.update({
-      where: { id },
-      data: { status },
-      include: {
-        items: true,
-      },
-    });
+    try {
+      return await this.prisma.order.update({
+        where: { id },
+        data: { status },
+        include: {
+          items: true,
+        },
+      });
+    } catch (error: any) {
+      // 💡 Al asignarle de forma explícita ': any' al catch (o haciendo un cast),
+      // TypeScript te permite leer '.code' sin arrojar la alerta de 'unknown'
+      if (error?.code === 'P2025') {
+        throw new NotFoundException('La orden que intentas actualizar no existe.');
+      }
+      throw error;
+    }
   }
 }

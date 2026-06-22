@@ -1,6 +1,6 @@
 export default function HowItWorksBanner() {
   return (
-    <div className="mb-12 bg-gradient-to-br from-[#0F172A] to-[#1E293B] rounded-3xl p-6 sm:p-8 relative overflow-hidden">
+    <div className="mb-12 bg-linear-to-br from-[#0F172A] to-[#1E293B] rounded-3xl p-6 sm:p-8 relative overflow-hidden">
       <div className="relative z-10">
         <p className="text-[#22C55E] text-[0.75rem] font-bold tracking-widest uppercase mb-1">¿Cómo funciona?</p>
         <h3 className="text-white font-extrabold text-[1.2rem] mb-6">Pide en 3 pasos</h3>

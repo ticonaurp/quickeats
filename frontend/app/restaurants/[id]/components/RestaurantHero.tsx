@@ -19,7 +19,7 @@ export default function RestaurantHero({ name, cuisine, coverImage }: Restaurant
         alt={name}
         className="w-full h-full object-cover opacity-80"
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+      <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/20 to-transparent" />
       
       {/* Botón de Regreso */}
       <button 
