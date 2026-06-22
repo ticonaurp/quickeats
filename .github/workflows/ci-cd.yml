@@ -46,34 +46,17 @@ jobs:
       - name: Descargar Codigo para Servidores
         uses: actions/checkout@v4
 
-      - name: Configurar Node.js v20 para Frontend
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Compilar Frontend (Next.js)
-        run: |
-          cd frontend
-          npm install
-          npm run build
-
-      - name: Configurar credenciales de AWS
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-2
-
-      - name: Desplegar archivos a AWS S3
-        run: |
-          aws s3 sync frontend/out s3://quickeats-frontend-prod --delete
-
       - name: Iniciar sesion en Azure Container Registry (ACR)
         uses: azure/docker-login@v2
         with:
           login-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - name: Construir y Subir Frontend
+        run: |
+          docker build --build-arg NEXT_PUBLIC_API_URL="https://ca-gateway.braveground-047a1b6e.eastus2.azurecontainerapps.io" -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/frontend:latest ./frontend
+          docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/frontend:latest
 
       - name: Construir y Subir Gateway
         run: |
