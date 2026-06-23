@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Package } from 'lucide-react';
+import { Plus, Package, Search, SlidersHorizontal } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Sub-componentes locales de productos
@@ -42,17 +42,17 @@ export default function ProductManagementPage() {
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  // 🌐 Base URL dinámica para todo el componente (Render o Local)
+  // 🌐 Base URL dinámica para todo el componente
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
-  // 🔍 Carga sincronizada desde el Gateway
+  // 🔍 Carga sincronizada desde el Gateway sin caché de Next.js
   useEffect(() => {
     const loadDashboardData = async () => {
       try {
         setLoading(true);
         const [productsRes, restaurantsRes] = await Promise.all([
-          fetch(`${baseUrl}/products`), // 👈 Cambiado
-          fetch(`${baseUrl}/restaurants`) // 👈 Cambiado
+          fetch(`${baseUrl}/products?_t=${Date.now()}`, { cache: 'no-store' }),
+          fetch(`${baseUrl}/restaurants?_t=${Date.now()}`, { cache: 'no-store' })
         ]);
 
         if (!productsRes.ok) throw new Error(`Productos falló: ${productsRes.status}`);
@@ -61,10 +61,10 @@ export default function ProductManagementPage() {
         const productsData = await productsRes.json();
         const restaurantsData = await restaurantsRes.json();
 
-        setProducts(productsData);
-        setRestaurants(restaurantsData);
+        setProducts(Array.isArray(productsData) ? productsData : []);
+        setRestaurants(Array.isArray(restaurantsData) ? restaurantsData : []);
       } catch (error) {
-        console.error('Fallo en sincronización:', error);
+        console.error('Fallo en de sincronización:', error);
         toast.error('No se pudieron sincronizar los datos con el servidor');
       } finally {
         setLoading(false);
@@ -74,18 +74,20 @@ export default function ProductManagementPage() {
     loadDashboardData();
   }, [baseUrl]);
 
-  // 📊 Filtrado dinámico en memoria
-  const filtered = products.filter((p) => {
-    const matchesSearch = !search || p.name.toLowerCase().includes(search.toLowerCase());
-    const matchesRest = activeRestaurant === 'all' || p.restaurantId === activeRestaurant;
-    return matchesSearch && matchesRest;
-  });
+  // 📊 Filtrado dinámico optimizado con useMemo
+  const filtered = useMemo(() => {
+    return products.filter((p) => {
+      const matchesSearch = !search || p.name.toLowerCase().includes(search.toLowerCase()) || p.category.toLowerCase().includes(search.toLowerCase());
+      const matchesRest = activeRestaurant === 'all' || p.restaurantId === activeRestaurant;
+      return matchesSearch && matchesRest;
+    });
+  }, [products, search, activeRestaurant]);
 
   // ❌ Eliminación física en PostgreSQL
   const handleDeleteConfirm = async () => {
     if (!deleteId) return;
     try {
-      const response = await fetch(`${baseUrl}/products/${deleteId}`, { // 👈 Cambiado
+      const response = await fetch(`${baseUrl}/products/${deleteId}`, {
         method: 'DELETE',
       });
 
@@ -110,7 +112,7 @@ export default function ProductManagementPage() {
     const updatedAvailable = !targetProduct.isAvailable;
 
     try {
-      const response = await fetch(`${baseUrl}/products/${id}`, { // 👈 Cambiado
+      const response = await fetch(`${baseUrl}/products/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -133,62 +135,74 @@ export default function ProductManagementPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#F8FAFC] font-sans antialiased">
+    <div className="flex min-h-screen bg-[#F8FAFC] font-sans antialiased text-slate-900">
       <Sidebar />
 
-      <div className="flex-1 p-6 sm:p-8">
-        {/* Cabecera */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+      <div className="flex-1 p-6 sm:p-8 max-w-350 mx-auto w-full space-y-6">
+        
+        {/* Cabecera Estilo Mango Premium */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-black text-gray-950 tracking-tight">Productos</h1>
-            <p className="text-gray-400 text-sm mt-1 font-medium">
-              {loading ? 'Cargando menú...' : `${products.length} productos en ${restaurants.length} restaurantes`}
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight font-poppins">Productos</h1>
+            <p className="text-slate-400 text-sm mt-1 font-medium">
+              {loading ? (
+                <span className="animate-pulse">Conectando con el Gateway de QuickEats...</span>
+              ) : (
+                <>
+                  {products.length} productos registrados · <span className="text-amber-500 font-mono text-xs font-bold">{restaurants.length} restaurantes activos</span>
+                </>
+              )}
             </p>
           </div>
+          
+          {/* 🥭 Botón Unificado con la Identidad Mango Corporativo */}
           <button
             onClick={() => router.push('/admin/products/new')}
-            className="flex items-center gap-2 bg-[#22C55E] hover:opacity-90 text-white text-sm font-bold px-5 py-2.5 rounded-xl shadow-sm transition-all"
+            className="flex items-center justify-center gap-2 bg-linear-to-r from-amber-500 to-orange-500 hover:opacity-95 text-white text-sm font-black px-5 py-3 rounded-xl shadow-md shadow-orange-500/10 transition-all transform hover:-translate-y-0.5"
           >
-            <Plus size={16} /> Agregar Producto
+            <Plus size={16} strokeWidth={3} /> Agregar Producto
           </button>
         </div>
 
-        {/* Filtros */}
-        <ProductFilter
-          search={search}
-          setSearch={setSearch}
-          activeRestaurant={activeRestaurant}
-          setActiveRestaurant={setActiveRestaurant}
-          restaurants={restaurants}
-        />
+        {/* Barra de Filtros y Búsqueda Estilizada */}
+        <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-xs">
+          <ProductFilter
+            search={search}
+            setSearch={setSearch}
+            activeRestaurant={activeRestaurant}
+            setActiveRestaurant={setActiveRestaurant}
+            restaurants={restaurants}
+          />
+        </div>
 
-        {/* Estado de Carga / Render de Tarjetas */}
+        {/* Contenedor Principal de Resultados */}
         {loading ? (
-          <div className="text-center py-24 text-sm font-medium text-gray-400">
-            Conectando con el Gateway de QuickEats...
+          <div className="bg-white rounded-2xl border border-slate-100 p-20 text-center text-slate-400 shadow-xs">
+            <p className="text-sm font-semibold animate-pulse">Sincronizando el flujo de inventario...</p>
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 mt-6">
-              {filtered.map((product) => {
-                const restaurant = restaurants.find((r) => r.id === product.restaurantId);
-                return (
-                  <ProductCardAdmin
-                    key={product.id}
-                    product={product}
-                    restaurantName={restaurant?.name || 'Desconocido'}
-                    onEdit={() => router.push(`/admin/products/${product.id}/edit`)}
-                    onToggleVisibility={() => toggleAvailability(product.id)}
-                    onDeleteTrigger={() => setDeleteId(product.id)}
-                  />
-                );
-              })}
-            </div>
-
-            {filtered.length === 0 && (
-              <div className="text-center py-16 bg-white rounded-2xl border border-gray-100 mt-6">
-                <Package size={32} className="mx-auto mb-3 text-gray-300" />
-                <p className="text-gray-500 font-medium">No se encontraron productos en la base de datos</p>
+            {filtered.length === 0 ? (
+              <div className="text-center py-20 bg-white rounded-2xl border border-slate-100 shadow-xs max-w-md mx-auto p-8 space-y-3">
+                <Package size={36} className="mx-auto text-slate-300" />
+                <h3 className="text-slate-800 font-bold text-base font-poppins">Sin coincidencias</h3>
+                <p className="text-slate-400 text-xs font-medium">No se encontraron productos en la base de datos bajo este filtro.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {filtered.map((product) => {
+                  const restaurant = restaurants.find((r) => r.id === product.restaurantId);
+                  return (
+                    <ProductCardAdmin
+                      key={product.id}
+                      product={product}
+                      restaurantName={restaurant?.name || 'Desconocido'}
+                      onEdit={() => router.push(`/admin/products/${product.id}/edit`)}
+                      onToggleVisibility={() => toggleAvailability(product.id)}
+                      onDeleteTrigger={() => setDeleteId(product.id)}
+                    />
+                  );
+                })}
               </div>
             )}
           </>
@@ -202,4 +216,4 @@ export default function ProductManagementPage() {
       </div>
     </div>
   );
-}
+} 

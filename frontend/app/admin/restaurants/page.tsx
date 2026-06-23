@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { Store, AlertCircle } from 'lucide-react'; 
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { Store, AlertCircle, RefreshCw } from 'lucide-react'; 
 import { Sidebar } from '../components/Sidebar'; 
 import { RestaurantHeader } from './components/RestaurantHeader';
 import { SearchBar } from './components/SearchBar';
@@ -27,18 +27,34 @@ export default function RestaurantsPage() {
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(true); 
   const [error, setError] = useState<string | null>(null); 
+  const [isSyncing, setIsSyncing] = useState(false); // Indicador visual sutil para polling posterior
 
-  // 🌐 Base URL dinámica para el componente (Render o Local)
+  // 🛡️ Semáforo para evitar colisiones en el Polling de alta velocidad
+  const isFetchingRef = useRef(false);
+  // 🔄 Guardamos el estado actual en una Ref para leerlo dentro del bucle sin recrear el interval
+  const restaurantsLengthRef = useRef(0);
+
+  useEffect(() => {
+    restaurantsLengthRef.current = restaurants.length;
+  }, [restaurants]);
+
+  // 🌐 Base URL dinámica para el componente
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
-  // ⏱️ EFECTO DINÁMICO: Carga inicial + Polling continuo en segundo plano
+  // ⏱️ EFECTO DINÁMICO DE INTEGRACIÓN: Carga inicial + Polling continuo inteligente
   useEffect(() => {
     setMounted(true);
 
-    const loadRestaurants = async () => {
+    const loadRestaurants = async (isInitial = false) => {
+      // Si la pestaña no está activa, ahorramos recursos del servidor y del cliente
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+      if (isFetchingRef.current) return; 
+      
+      isFetchingRef.current = true;
+      if (!isInitial) setIsSyncing(true);
+
       try {
-        // Mantenemos el error en null para re-intentos limpios de red
-        setError(null); 
+        if (isInitial) setError(null); 
         const response = await fetch(`${baseUrl}/restaurants`); 
         
         if (!response.ok) {
@@ -47,13 +63,9 @@ export default function RestaurantsPage() {
         }
 
         const rawData = await response.json();
-
-        // 🔍 CONTROL DE QA: Imprimimos en la consola del navegador la respuesta exacta para auditarla
-        console.log("🔍 [QA AUDIT] Respuesta cruda del Gateway:", rawData);
-
         let realRestaurantsArray: any[] = [];
 
-        // 🛡️ EXTRACTOR AUTOMÁTICO DE ARREGLOS (Soporta cualquier estructura de backend)
+        // Extractor automático de arreglos robusto
         if (Array.isArray(rawData)) {
           realRestaurantsArray = rawData; 
         } else if (rawData && typeof rawData === 'object') {
@@ -67,69 +79,81 @@ export default function RestaurantsPage() {
           throw new Error("La respuesta del servidor no es un objeto JSON válido.");
         }
 
-        // 🚀 Mapeo ultra-seguro
-        const formattedData = realRestaurantsArray.map((r: any) => ({
-          ...r,
-          reviewCount: r.reviewCount ?? 0,
+        // Mapeo ultra-seguro y formateo numérico coherente
+        const formattedData: Restaurant[] = realRestaurantsArray.map((r: any) => ({
+          id: r.id,
+          name: r.name ?? 'Sin nombre',
+          address: r.address ?? 'Dirección no especificada',
+          category: r.category ?? 'General',
+          rating: Number(r.rating ?? 4.5),
+          reviewCount: Number(r.reviewCount ?? 0),
           deliveryTime: typeof r.deliveryTime === 'number' ? `${r.deliveryTime} min` : (r.deliveryTime ?? '30 min'),
+          deliveryFee: Number(r.deliveryFee ?? 0),
+          isOpen: Boolean(r.isOpen),
           image: r.image ?? ''
         }));
 
         setRestaurants(formattedData);
+        setError(null); 
       } catch (error: any) {
         console.error("❌ Error en el flujo de integración:", error);
-        setError(error.message || "No se pudo establecer conexión con el servidor backend.");
+        if (isInitial || !restaurantsLengthRef.current) {
+          setError(error.message || "No se pudo establecer conexión con el servidor backend.");
+        }
       } finally {
-        setLoading(false); // Apaga el esqueleto de carga inicial la primera vez
+        isFetchingRef.current = false;
+        setIsSyncing(false);
+        if (isInitial) setLoading(false); 
       }
     };
 
-    // 1. Ejecución inmediata al cargar o montar la vista
-    loadRestaurants();
+    // 1. Ejecución inicial limpia
+    loadRestaurants(true);
 
-    // 2. ⏱️ CONFIGURACIÓN DEL INTERVALO: Re-consulta al Gateway silenciosamente cada 1.5 segundos
+    // 2. ⏱️ POLLING OPTIMIZADO: Consulta en silencio cada 2 segundos sin recrearse cíclicamente
     const interval = setInterval(() => {
-      loadRestaurants();
-    }, 1000);
+      loadRestaurants(false);
+    }, 2000);
 
-    // 3. 🧹 LIMPIEZA AUTOMÁTICA: Apaga el temporizador si el administrador navega a otra sección del panel
+    // 3. 🧹 LIMPIEZA AUTOMÁTICA AL DESMONTAR
     return () => clearInterval(interval);
-  }, [baseUrl]);
+  }, [baseUrl]); // Quitamos restaurants.length de las dependencias para evitar fugas y re-creaciones
 
-  const filtered = restaurants.filter(r =>
-    !search || 
-    r.name.toLowerCase().includes(search.toLowerCase()) || 
-    r.category.toLowerCase().includes(search.toLowerCase())
-  );
+  // 🔍 FILTRADO OPTIMIZADO: Memorizado para evitar lag en inputs
+  const filteredRestaurants = useMemo(() => {
+    const cleanSearch = search.trim().toLowerCase();
+    if (!cleanSearch) return restaurants;
 
-  // 🔄 Cambiado a función asíncrona con persistencia real en base de datos (Optimistic Update)
+    return restaurants.filter(r =>
+      r.name.toLowerCase().includes(cleanSearch) || 
+      r.category.toLowerCase().includes(cleanSearch)
+    );
+  }, [search, restaurants]);
+
+  // 🔄 OPTIMISTIC UPDATE ASÍNCRONO
   const handleToggleOpen = async (id: string) => {
     const targetRestaurant = restaurants.find(r => r.id === id);
     if (!targetRestaurant) return;
 
     const nextStatus = !targetRestaurant.isOpen;
 
-    // 1. Actualización Optimista en el UI
+    // Mutación local optimista instantánea
     setRestaurants(prev => 
       prev.map(r => r.id === id ? { ...r, isOpen: nextStatus } : r)
     );
 
     try {
-      // 2. Petición PATCH al API Gateway (Solo mandamos la propiedad mutada)
       const response = await fetch(`${baseUrl}/restaurants/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isOpen: nextStatus }),
       });
 
-      if (!response.ok) {
-        throw new Error('Error al actualizar el estado en el backend.');
-      }
+      if (!response.ok) throw new Error();
     } catch (error) {
-      console.error("❌ Error actualizando el estado en el servidor:", error);
-      alert("No se pudo guardar el cambio en la base de datos. Verificando conexión...");
+      console.error("❌ Fallback aplicado: Error guardando cambios en el servidor.");
       
-      // 3. Fallback/Rollback: Si el servidor falla, revertimos el interruptor al estado original
+      // Rollback inmediato si falla el endpoint del microservicio
       setRestaurants(prev => 
         prev.map(r => r.id === id ? { ...r, isOpen: !nextStatus } : r)
       );
@@ -139,41 +163,55 @@ export default function RestaurantsPage() {
   if (!mounted) return null;
 
   return (
-    <div className="flex bg-[#f8fafc] min-h-screen w-full font-sans antialiased text-gray-900">
+    <div className="flex bg-[#f8fafc] min-h-screen w-full font-sans antialiased text-slate-900">
       
       <Sidebar />
 
-      <main className="flex-1 p-8 max-w-350 mx-auto w-full space-y-4">
+      <main className="flex-1 p-8 max-w-7xl mx-auto w-full space-y-6">
         
-        <RestaurantHeader total={restaurants.length} />
+        {/* Header con indicador discreto de background sync */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <RestaurantHeader total={restaurants.length} />
+          {isSyncing && (
+            <div className="flex items-center gap-2 self-end sm:self-center text-[11px] text-amber-600 bg-amber-50 font-mono px-3 py-1 rounded-full border border-amber-100 shadow-2xs self-start">
+              <RefreshCw size={12} className="animate-spin" />
+              <span>Sincronizando live</span>
+            </div>
+          )}
+        </div>
         
         <SearchBar value={search} onChange={setSearch} />
 
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        {/* Contenedor principal alineado al estilo de image_5089db.png */}
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-xs overflow-hidden transition-all">
           
           {loading ? (
-            <div className="text-center py-16 text-gray-400">
-              <p className="text-sm font-medium animate-pulse">Conectando con el Gateway y cargando restaurantes...</p>
+            <div className="text-center py-24 text-slate-400">
+              <div className="w-9 h-9 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-sm font-medium tracking-tight animate-pulse text-slate-500 font-poppins">
+                Cargando registros del panel administrativo...
+              </p>
             </div>
           ) : error ? (
-            <div className="text-center py-16 px-4 bg-red-50/50 text-red-600">
-              <AlertCircle size={40} className="mx-auto mb-3 text-red-400 stroke-[1.5]" />
-              <p className="text-sm font-semibold mb-1">Error de integración en el Backend</p>
-              <p className="text-xs text-red-500 max-w-md mx-auto font-mono bg-white p-3 rounded-lg border border-red-100 shadow-2xl mt-2">
+            <div className="text-center py-20 px-6 bg-rose-50/20 text-rose-600">
+              <AlertCircle size={44} className="mx-auto mb-3 text-rose-400 stroke-[1.5]" />
+              <h4 className="text-base font-bold font-poppins text-slate-800 mb-1">Error de comunicación</h4>
+              <p className="text-xs text-rose-500 max-w-md mx-auto font-mono bg-white p-3 rounded-xl border border-rose-100 shadow-sm mt-3 leading-relaxed">
                 {error}
               </p>
             </div>
           ) : (
             <>
-              <RestaurantTable data={filtered} onToggleOpen={handleToggleOpen} />
-              <RestaurantMobileList data={filtered} onToggleOpen={handleToggleOpen} />
+              <RestaurantTable data={filteredRestaurants} onToggleOpen={handleToggleOpen} />
+              <RestaurantMobileList data={filteredRestaurants} onToggleOpen={handleToggleOpen} />
             </>
           )}
 
-          {!loading && !error && filtered.length === 0 && (
-            <div className="text-center py-16 text-gray-400 bg-white">
-              <Store size={40} className="mx-auto mb-3 text-gray-300 stroke-[1.5]" />
-              <p className="text-sm font-medium">No se encontraron restaurantes registrados.</p>
+          {!loading && !error && filteredRestaurants.length === 0 && (
+            <div className="text-center py-24 text-slate-400 bg-white">
+              <Store size={44} className="mx-auto mb-3 text-slate-300 stroke-[1.5]" />
+              <p className="text-sm font-semibold text-slate-700 font-poppins mb-1">Sin coincidencias</p>
+              <p className="text-xs text-slate-400">No encontramos ningún comercio con los términos ingresados.</p>
             </div>
           )}
         </div>

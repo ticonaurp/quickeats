@@ -43,7 +43,7 @@ export default function RestaurantCard({ r, onClick }: RestaurantCardProps) {
 
         {/* Badges superiores - Color Mango Integrado 🥭 */}
         {isExpress && (
-          <span className="absolute top-3 left-3 bg-gradient-to-r from-amber-500 via-orange-500 to-orange-600 text-white font-black text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-xl shadow-sm flex items-center gap-1">
+          <span className="absolute top-3 left-3 bg-linear-to-r from-amber-500 via-orange-500 to-orange-600 text-white font-black text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-xl shadow-sm flex items-center gap-1">
             <Zap size={10} className="fill-white" /> Envío Rápido
           </span>
         )}

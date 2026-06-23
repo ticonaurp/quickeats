@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { DollarSign, ShoppingBag, Utensils, Package } from 'lucide-react';
+import { DollarSign, ShoppingBag, Utensils, Package, Sparkles } from 'lucide-react';
 
 // 🔄 Importaciones absolutas alineadas a la estructura de tu proyecto
 import { Sidebar } from '@/app/admin/components/Sidebar';
@@ -22,53 +22,61 @@ export default function DashboardPage() {
   if (!mounted) return null;
 
   return (
-    <div className="flex bg-[#f8fafc] min-h-screen w-full font-sans antialiased text-gray-900">
+    <div className="flex bg-[#F8FAFC] min-h-screen w-full font-sans antialiased text-slate-900">
       
-      {/* Menú de navegación lateral fijo */}
+      {/* Menú de navegación lateral fijo con la identidad Mango */}
       <Sidebar />
 
       {/* Área central del Dashboard */}
-      <main className="flex-1 p-8 max-w-[1400px] mx-auto w-full space-y-6">
+      <main className="flex-1 p-8 max-w-350 mx-auto w-full space-y-6">
         
-        {/* Cabecera del Panel */}
-        <div>
-          <h1 className="text-3xl font-black text-gray-950 tracking-tight">
-            Panel de Control
-          </h1>
-          <p className="text-gray-500 text-sm mt-1 font-medium">
-            Bienvenido al resumen general de QuickEats
-          </p>
+        {/* Cabecera del Panel Estilizada */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-100">
+          <div>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight font-poppins">
+              Panel de Control
+            </h1>
+            <p className="text-slate-400 text-sm mt-1 font-medium">
+              Bienvenido al resumen operativo en tiempo real de <span className="text-amber-500 font-bold">QuickEats</span>
+            </p>
+          </div>
+          
+          {/* Badge estético de estado del laboratorio/servidor */}
+          <div className="self-start sm:self-auto inline-flex items-center gap-1.5 bg-amber-50 border border-amber-100/60 rounded-xl px-3 py-1.5 text-amber-700 text-xs font-bold shadow-xs">
+            <Sparkles size={12} className="text-amber-500 animate-pulse" />
+            <span>Sistemas Sincronizados</span>
+          </div>
         </div>
 
-        {/* 📊 Bloque de Métricas (Simplificado sin los porcentajes de 'change') */}
+        {/* 📊 Bloque de Métricas Renovado bajo el esquema de color QuickEats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           <StatCard 
             label="Ingresos Totales" 
             value="S/ 4,850.00" 
             icon={DollarSign} 
-            bgColor="bg-green-50" 
-            iconColor="text-green-500" 
+            bgColor="bg-amber-50/70" 
+            iconColor="text-amber-600" 
           />
           <StatCard 
             label="Pedidos Activos" 
             value="12" 
             icon={ShoppingBag} 
-            bgColor="bg-blue-50" 
-            iconColor="text-blue-500" 
+            bgColor="bg-orange-50/70" 
+            iconColor="text-orange-600" 
           />
           <StatCard 
             label="Restaurantes" 
             value="3" 
             icon={Utensils} 
-            bgColor="bg-amber-50" 
-            iconColor="text-amber-500" 
+            bgColor="bg-slate-50" 
+            iconColor="text-slate-600" 
           />
           <StatCard 
             label="Productos" 
             value="31" 
             icon={Package} 
-            bgColor="bg-purple-50" 
-            iconColor="text-purple-500" 
+            bgColor="bg-slate-100/50" 
+            iconColor="text-slate-700" 
           />
         </div>
 

@@ -35,7 +35,7 @@ export default function LoginPage() {
           {/* Sutil resplandor de fondo color mango (muy suave) */}
           <div className="absolute inset-0 bg-[radial-gradient(at_30%_30%,rgba(245,158,11,0.05)_0%,transparent_60%)]" />
           
-          <div className="relative w-full -rotate-[4deg] scale-[1.12] flex flex-col gap-5">
+          <div className="relative w-full rotate-[-4deg] scale-[1.12] flex flex-col gap-5">
             
             {/* Fila 1 - Comidas en Gris Tenue */}
             <div className="overflow-hidden whitespace-nowrap flex min-w-full">
@@ -48,11 +48,11 @@ export default function LoginPage() {
             </div>
 
             {/* Fila 2 - Marca con Gradiente Mango Enérgico */}
-            <div className="overflow-hidden whitespace-nowrap flex min-w-full py-3 bg-amber-500/[0.05] border-y border-amber-500/10">
-              <div className="animate-wave-reverse flex shrink-0 text-7xl xl:text-8xl font-black tracking-[-3px] bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 bg-clip-text text-transparent uppercase select-none">
+            <div className="overflow-hidden whitespace-nowrap flex min-w-full py-3 bg-amber-500/5 border-y border-amber-500/10">
+              <div className="animate-wave-reverse flex shrink-0 text-7xl xl:text-8xl font-black tracking-[-3px] bg-linear-to-r from-amber-500 via-orange-500 to-amber-600 bg-clip-text text-transparent uppercase select-none">
                 QUICKEATS • LIVE • SPEED • PREMIUM •&nbsp;
               </div>
-              <div className="animate-wave-reverse flex shrink-0 text-7xl xl:text-8xl font-black tracking-[-3px] bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 bg-clip-text text-transparent uppercase select-none">
+              <div className="animate-wave-reverse flex shrink-0 text-7xl xl:text-8xl font-black tracking-[-3px] bg-linear-to-r from-amber-500 via-orange-500 to-amber-600 bg-clip-text text-transparent uppercase select-none">
                 QUICKEATS • LIVE • SPEED • PREMIUM •&nbsp;
               </div>
             </div>

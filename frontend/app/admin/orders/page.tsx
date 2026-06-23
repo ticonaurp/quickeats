@@ -128,7 +128,7 @@ useEffect(() => {
     <div className="flex bg-[#f8fafc] min-h-screen w-full font-sans antialiased text-gray-900">
       <Sidebar />
 
-      <main className="flex-1 p-8 max-w-[1400px] mx-auto w-full space-y-6">
+      <main className="flex-1 p-8 max-w-350 mx-auto w-full space-y-6">
         {/* Cabecera */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
