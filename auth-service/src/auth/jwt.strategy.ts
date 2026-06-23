@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 
@@ -6,15 +6,18 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor() {
     super({
-      // Extraer el token del header "Authorization: Bearer <TOKEN>"
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
       secretOrKey: process.env.JWT_SECRET || 'super-secret-key-change-me',
     });
   }
 
-  // Lo que retorne esta función se inyectará automáticamente en "req.user"
-  async validate(payload: { sub: string; email: string }) {
-    return { id: payload.sub, email: payload.email };
+  // CORREGIDO: Ahora incluimos el rol en el req.user global de NestJS
+  async validate(payload: { sub: string; email: string; role: string }) {
+    return { 
+      id: payload.sub, 
+      email: payload.email, 
+      role: payload.role 
+    };
   }
 }
