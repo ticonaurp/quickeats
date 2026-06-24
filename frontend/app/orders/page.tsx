@@ -1,10 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Search as SearchIcon, ChevronDown, ClipboardList, AlertCircle, Store, User, Bike, CheckCircle, XCircle, ShoppingBag, ArrowRight, Calendar, UtensilsCrossed, MapPin, ReceiptText, ChefHat, Check } from 'lucide-react';
+import { Search as SearchIcon, ChevronDown, ChevronUp, ClipboardList, AlertCircle, Bike, CheckCircle, XCircle, ArrowRight, Calendar, UtensilsCrossed, MapPin, ReceiptText, ChefHat, Check } from 'lucide-react';
 import Link from 'next/link';
-// 🎯 Alias nativos @ para resolver dependencias limpiamente
-import { fetchFromGateway } from '@/app/services/api';
 import { getUserId } from '@/app/services/auth';
 
 interface OrderItem {
@@ -31,43 +29,12 @@ interface Order {
   items: OrderItem[]; 
 }
 
-// 🎯 Consistencia de Estados: Diccionario de metadatos idéntico al del Admin
 const STATUS_META: Record<string, { label: string; color: string; bg: string; stepIndex: number; icon: React.ReactNode }> = {
-  PENDING: { 
-    label: 'Recibido', 
-    color: '#4b5563', 
-    bg: '#f3f4f6', 
-    stepIndex: 1, 
-    icon: <ReceiptText size={14} /> 
-  }, 
-  PREPARING: { 
-    label: 'Cocina', 
-    color: '#b45309', 
-    bg: '#fef3c7', 
-    stepIndex: 2, 
-    icon: <ChefHat size={14} className="animate-pulse" /> 
-  }, 
-  DELIVERING: { 
-    label: 'En Camino', 
-    color: '#c2410c', 
-    bg: '#ffedd5', 
-    stepIndex: 3, 
-    icon: <Bike size={14} className="animate-bounce" /> 
-  }, 
-  DELIVERED: { 
-    label: 'Entregado', 
-    color: '#15803d', 
-    bg: '#dcfce7', 
-    stepIndex: 4, 
-    icon: <CheckCircle size={14} /> 
-  }, 
-  CANCELLED: { 
-    label: 'Cancelado', 
-    color: '#dc2626', 
-    bg: '#fee2e2', 
-    stepIndex: 0, 
-    icon: <XCircle size={14} /> 
-  }, 
+  PENDING: { label: 'Recibido', color: '#4b5563', bg: '#f3f4f6', stepIndex: 1, icon: <ReceiptText size={14} /> }, 
+  PREPARING: { label: 'Cocina', color: '#b45309', bg: '#fef3c7', stepIndex: 2, icon: <ChefHat size={14} className="animate-pulse" /> }, 
+  DELIVERING: { label: 'En Camino', color: '#c2410c', bg: '#ffedd5', stepIndex: 3, icon: <Bike size={14} className="animate-bounce" /> }, 
+  DELIVERED: { label: 'Entregado', color: '#15803d', bg: '#dcfce7', stepIndex: 4, icon: <CheckCircle size={14} /> }, 
+  CANCELLED: { label: 'Cancelado', color: '#dc2626', bg: '#fee2e2', stepIndex: 0, icon: <XCircle size={14} /> }, 
 };
 
 const STATUS_LIST = ['PENDING', 'PREPARING', 'DELIVERING', 'DELIVERED', 'CANCELLED'];
@@ -81,11 +48,155 @@ function formatDate(dateStr: string) {
   });
 }
 
+// 📦 COMPONENTE AUXILIAR OPTIMIZADO CON ACORDEÓN COMPACTO
+function OrderCard({ order }: { order: Order }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const meta = STATUS_META[order.status] || STATUS_META.PENDING;
+
+  const getBarColor = () => {
+    if (meta.stepIndex === 4) return 'bg-green-600';
+    if (meta.stepIndex === 3) return 'bg-blue-500';
+    if (meta.stepIndex === 2) return 'bg-amber-500';
+    return 'bg-slate-400';
+  };
+
+  return (
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-xs transition-all duration-200 hover:shadow-md">
+      {/* 💳 CABECERA COMPACTA (Siempre visible - Activador del clic) */}
+      <div 
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="p-5 flex items-center justify-between gap-4 cursor-pointer select-none"
+      >
+        <div className="flex items-center gap-4 min-w-0">
+          <div className="p-3 bg-slate-50 rounded-xl text-slate-500 group-hover:bg-amber-50 shrink-0">
+            <ReceiptText size={20} />
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="font-bold text-slate-900 tracking-tight text-base truncate max-w-[180px] sm:max-w-xs">
+                {order.restaurantName}
+              </h3>
+              <span className="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-md font-mono font-bold">
+                #{order.id.substring(0, 8).toUpperCase()}
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 font-semibold mt-0.5">
+              {formatDate(order.createdAt)} • {order.items?.reduce((acc, i) => acc + i.quantity, 0)} items
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 shrink-0">
+          <div 
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-wide"
+            style={{ color: meta.color, background: meta.bg }}
+          >
+            {meta.icon}
+            <span className="hidden sm:inline">{meta.label}</span>
+          </div>
+          <span className="text-green-600 font-black text-base font-mono">
+            S/. {order.total.toFixed(2)}
+          </span>
+          {isExpanded ? <ChevronUp size={18} className="text-slate-400" /> : <ChevronDown size={18} className="text-slate-400" />}
+        </div>
+      </div>
+
+      {/* 🔍 DESPLEGABLE DETALLADO (Renderizado condicional con animaciones) */}
+      {isExpanded && (
+        <div className="px-5 pb-5 pt-2 border-t border-slate-50/80 space-y-5 bg-slate-50/10 rounded-b-2xl">
+          
+          {/* 1. Stepper de Seguimiento Realtime */}
+          {meta.stepIndex > 0 && (
+            <div className="py-4 border border-slate-100/60 bg-white rounded-xl px-2 shadow-xs">
+              <div className="flex items-center justify-between relative w-full px-4 sm:px-8">
+                <div className="absolute top-4 left-8 right-8 h-1 bg-slate-100 -z-10 rounded-full" />
+                <div 
+                  className={`absolute top-4 left-8 h-1 ${getBarColor()} -z-10 rounded-full transition-all duration-500`}
+                  style={{ width: `${((meta.stepIndex - 1) / 3) * 100}%` }}
+                />
+
+                {[
+                  { label: 'Recibido', icon: <ReceiptText size={14} />, index: 1 },
+                  { label: 'Cocina', icon: <ChefHat size={14} />, index: 2 },
+                  { label: 'En Camino', icon: <Bike size={14} />, index: 3 },
+                  { label: 'Entregado', icon: <CheckCircle size={14} />, index: 4 }
+                ].map((step) => {
+                  const isCurrent = meta.stepIndex === step.index;
+                  const isPassed = meta.stepIndex > step.index;
+
+                  let finalStyle = 'bg-white text-slate-300 border-slate-200';
+                  if (isCurrent) {
+                    if (step.index === 1) finalStyle = 'bg-slate-700 text-white border-slate-700 shadow-md scale-105';
+                    if (step.index === 2) finalStyle = 'bg-amber-500 text-white border-amber-500 shadow-md scale-105';
+                    if (step.index === 3) finalStyle = 'bg-blue-500 text-white border-blue-500 shadow-md scale-105';
+                    if (step.index === 4) finalStyle = 'bg-green-600 text-white border-green-600 shadow-md scale-105';
+                  } else if (isPassed) {
+                    if (step.index === 1) finalStyle = 'bg-slate-600 text-white border-slate-600';
+                    if (step.index === 2) finalStyle = 'bg-amber-500 text-white border-amber-500';
+                    if (step.index === 3) finalStyle = 'bg-blue-500 text-white border-blue-500';
+                  }
+
+                  return (
+                    <div key={step.index} className="flex flex-col items-center gap-1.5 text-center">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center border transition-all duration-300 text-xs ${finalStyle}`}>
+                        {isPassed ? <Check size={14} strokeWidth={3} /> : step.icon}
+                      </div>
+                      <span className={`text-[10px] tracking-tight font-bold hidden sm:block ${
+                        isCurrent ? 'text-slate-800 font-extrabold' : isPassed ? 'text-slate-500' : 'text-slate-300'
+                      }`}>
+                        {step.label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* 2. Desglose de Platillos */}
+          <div className="bg-slate-50 border border-slate-100/50 rounded-xl p-4 space-y-2">
+            <div className="flex items-center gap-1.5 text-[10px] text-slate-400 uppercase tracking-wider font-black mb-1">
+              <ReceiptText size={12} />
+              <span>Resumen de platillos</span>
+            </div>
+            {order.items?.map((item) => (
+              <div key={item.id} className="flex justify-between items-center text-sm font-medium text-slate-700">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] bg-white border border-slate-200 text-slate-600 font-extrabold px-1.5 py-0.5 rounded-md">
+                    {item.quantity}x
+                  </span>
+                  <span className="text-slate-800 font-medium tracking-tight">{item.name}</span>
+                </div>
+                <span className="text-slate-500 font-mono text-xs">S/. {item.price.toFixed(2)}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* 3. Datos de Despacho Financiero */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pt-2 text-xs font-bold border-t border-slate-100/60">
+            <div className="flex items-center gap-2 text-slate-400 font-medium truncate max-w-sm">
+              <MapPin size={14} className="text-slate-300 shrink-0" />
+              <p className="truncate text-slate-500">
+                <span className="font-bold text-slate-700">Entregar en:</span> {order.address}
+              </p>
+            </div>
+            <div className="w-full sm:w-auto flex justify-between sm:justify-end gap-4 text-right text-slate-400 font-semibold">
+              <p>Subtotal: S/. {order.subtotal.toFixed(2)}</p>
+              <p>Envío: S/. {order.deliveryFee.toFixed(2)}</p>
+            </div>
+          </div>
+
+        </div>
+      )}
+    </div>
+  );
+}
+
+// 🏛️ SCREEN PRINCIPAL REFACTORIZADA
 export default function OrdersHistoryScreen() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
@@ -97,16 +208,12 @@ export default function OrdersHistoryScreen() {
       return;
     }
 
-    // 🔄 Polling Dinámico e Inmediato sin Caché Intermedia de Next.js
     const loadData = async () => {
       try {
-        // 💡 Inyectamos un query param dinámico (_t) y configuramos el bypass de caché
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/orders/user/${userId}?_t=${Date.now()}`, {
           method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          cache: 'no-store' // ⚡ CLAVE: Evita que Next.js recuerde la consulta anterior
+          headers: { 'Content-Type': 'application/json' },
+          cache: 'no-store'
         });
 
         if (response.ok) {
@@ -120,14 +227,8 @@ export default function OrdersHistoryScreen() {
       }
     };
 
-    // Consulta inicial reactiva
     loadData();
-
-    // 🕒 Consulta limpia al microservicio cada 10 segundos exactos
-    const interval = setInterval(() => {
-      loadData();
-    }, 10000);
-
+    const interval = setInterval(loadData, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -145,16 +246,10 @@ export default function OrdersHistoryScreen() {
 
   if (loading) {
     return (
-      <div className="max-w-3xl mx-auto px-4 py-12 space-y-6">
+      <div className="max-w-3xl mx-auto px-4 py-12 space-y-4">
         <div className="h-8 bg-slate-200 rounded-xl w-48 animate-pulse mb-4" />
-        {[1, 2].map((n) => (
-          <div key={n} className="bg-white rounded-3xl p-6 border border-slate-100 space-y-4 animate-pulse">
-            <div className="flex justify-between">
-              <div className="h-5 bg-slate-200 rounded-md w-40" />
-              <div className="h-6 bg-slate-200 rounded-full w-24" />
-            </div>
-            <div className="h-20 bg-slate-100 rounded-xl w-full" />
-          </div>
+        {[1, 2, 3].map((n) => (
+          <div key={n} className="bg-white rounded-2xl h-16 border border-slate-100 animate-pulse" />
         ))}
       </div>
     );
@@ -166,7 +261,7 @@ export default function OrdersHistoryScreen() {
         <div className="w-12 h-12 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto">
           <AlertCircle size={24} />
         </div>
-        <h3 className="font-black text-xl text-slate-900 font-poppins">Error de Carga</h3>
+        <h3 className="font-black text-xl text-slate-900">Error de Carga</h3>
         <p className="text-slate-400 text-sm font-medium">{error}</p>
         <Link href="/login" className="inline-block px-6 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold shadow-md hover:bg-slate-800 transition-all">
           Reingresar a mi cuenta
@@ -182,9 +277,9 @@ export default function OrdersHistoryScreen() {
         {/* Cabecera */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h2 className="text-3xl font-black text-slate-900 tracking-tight font-poppins">Mis Pedidos</h2>
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight">Mis Pedidos</h2>
             <p className="text-slate-500 text-sm mt-1 font-medium">
-              Historial completo y monitoreo en tiempo real de tus órdenes en QuickEats.
+              Historial completo y monitoreo en tiempo real de tus órdenes.
             </p>
           </div>
 
@@ -207,7 +302,7 @@ export default function OrdersHistoryScreen() {
               onClick={() => setStatusFilter('all')}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold border transition-all shrink-0 ${
                 statusFilter === 'all' 
-                  ? 'bg-amber-500 text-white border-amber-500 shadow-md shadow-amber-500/10' 
+                  ? 'bg-amber-500 text-white border-amber-500 shadow-md' 
                   : 'bg-white border-slate-200 text-slate-600 hover:border-amber-300'
               }`}
             >
@@ -243,12 +338,12 @@ export default function OrdersHistoryScreen() {
               <UtensilsCrossed size={24} />
             </div>
             <div>
-              <h3 className="font-extrabold text-lg text-slate-900 font-poppins">¿Qué vas a comer hoy?</h3>
-              <p className="text-slate-400 text-sm font-medium mt-1">Aún no registras ninguna compra en el sistema.</p>
+              <h3 className="font-extrabold text-lg text-slate-900">¿Qué vas a comer hoy?</h3>
+              <p className="text-slate-400 text-sm font-medium mt-1">Aún no registras ninguna compra.</p>
             </div>
             <Link
               href="/user"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-green-500 text-white font-bold text-sm rounded-xl hover:bg-green-600 transition-all shadow-md shadow-green-500/10"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-green-500 text-white font-bold text-sm rounded-xl hover:bg-green-600 transition-all"
             >
               Ver Restaurantes <ArrowRight size={14} />
             </Link>
@@ -256,146 +351,14 @@ export default function OrdersHistoryScreen() {
         ) : filtered.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-2xl border border-slate-100 shadow-xs max-w-md mx-auto p-8">
             <ClipboardList size={40} className="mx-auto mb-3 text-slate-300" />
-            <p className="text-sm font-medium text-gray-400">No se encontraron pedidos con el criterio buscado.</p>
+            <p className="text-sm font-medium text-gray-400">No se encontraron pedidos.</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-6">
-            {filtered.map((order) => {
-              const meta = STATUS_META[order.status] || STATUS_META.PENDING;
-              
-              const getBarColor = () => {
-                if (meta.stepIndex === 4) return 'bg-green-600';
-                if (meta.stepIndex === 3) return 'bg-blue-500';
-                if (meta.stepIndex === 2) return 'bg-amber-500';
-                return 'bg-slate-400';
-              };
-
-              return (
-                <div
-                  key={order.id}
-                  className="bg-white rounded-3xl border border-slate-100/80 p-6 sm:p-7 flex flex-col gap-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/50 group"
-                >
-                  <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-3 flex-wrap">
-                        <h3 className="font-black text-slate-900 font-poppins text-xl group-hover:text-amber-500 transition-colors tracking-tight">
-                          {order.restaurantName}
-                        </h3>
-                        <span className="text-[10px] text-slate-700 bg-slate-100 px-2 py-1 rounded-md font-mono font-bold tracking-wider">
-                          #{order.id.substring(0, 8).toUpperCase()}
-                        </span>
-                      </div>
-                      
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400 font-semibold">
-                        <span className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-md text-slate-500">
-                          <Calendar size={13} />
-                          {formatDate(order.createdAt)}
-                        </span>
-                        <span>•</span>
-                        <span>{order.paymentMethod === 'CARD' ? '💳 Tarjeta' : '💵 Efectivo'}</span>
-                      </div>
-                    </div>
-
-                    <div className="shrink-0 self-start sm:self-auto">
-                      <div 
-                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-black tracking-wide uppercase shadow-xs border border-transparent"
-                        style={{ color: meta.color, background: meta.bg }}
-                      >
-                        {meta.icon}
-                        <span>{meta.label}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {meta.stepIndex > 0 && (
-                    <div className="pt-4 pb-2 border-t border-b border-slate-50/80 my-1 bg-slate-50/30 rounded-2xl px-2">
-                      <div className="flex items-center justify-between relative w-full px-4 sm:px-8">
-                        <div className="absolute top-4 left-8 right-8 h-1 bg-slate-200/70 -z-10 rounded-full" />
-                        <div 
-                          className={`absolute top-4 left-8 h-1 ${getBarColor()} -z-10 rounded-full transition-all duration-500`}
-                          style={{ width: `${((meta.stepIndex - 1) / 3) * 100}%` }}
-                        />
-
-                        {[
-                          { label: 'Recibido', icon: <ReceiptText size={15} />, index: 1 },
-                          { label: 'Cocina', icon: <ChefHat size={15} />, index: 2 },
-                          { label: 'En Camino', icon: <Bike size={15} />, index: 3 },
-                          { label: 'Entregado', icon: <CheckCircle size={15} />, index: 4 }
-                        ].map((step) => {
-                          const isCurrent = meta.stepIndex === step.index;
-                          const isPassed = meta.stepIndex > step.index;
-
-                          let finalStyle = 'bg-white text-slate-300 border-slate-200';
-                          if (isCurrent) {
-                            if (step.index === 1) finalStyle = 'bg-slate-700 text-white border-slate-700 shadow-md scale-110 font-bold';
-                            if (step.index === 2) finalStyle = 'bg-amber-500 text-white border-amber-500 shadow-md scale-110 font-bold';
-                            if (step.index === 3) finalStyle = 'bg-blue-500 text-white border-blue-500 shadow-md scale-110 font-bold';
-                            if (step.index === 4) finalStyle = 'bg-green-600 text-white border-green-600 shadow-md scale-110 font-bold';
-                          } else if (isPassed) {
-                            if (step.index === 1) finalStyle = 'bg-slate-600 text-white border-slate-600';
-                            if (step.index === 2) finalStyle = 'bg-amber-500 text-white border-amber-500';
-                            if (step.index === 3) finalStyle = 'bg-blue-500 text-white border-blue-500';
-                          }
-
-                          return (
-                            <div key={step.index} className="flex flex-col items-center gap-2 text-center">
-                              <div className={`w-9 h-9 rounded-full flex items-center justify-center border transition-all duration-300 ${finalStyle}`}>
-                                {isPassed ? <Check size={15} strokeWidth={3} /> : step.icon}
-                              </div>
-                              <span className={`text-[11px] tracking-tight font-extrabold transition-colors hidden sm:block ${
-                                isCurrent ? 'text-slate-800 font-black' : isPassed ? 'text-slate-500' : 'text-slate-300'
-                              }`}>
-                                {step.label}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="bg-slate-50/60 border border-slate-100/50 rounded-2xl p-4 space-y-2.5">
-                    <div className="flex items-center gap-1.5 text-[10px] text-slate-400 uppercase tracking-wider font-black mb-1">
-                      <ReceiptText size={12} />
-                      <span>Resumen de platillos</span>
-                    </div>
-                    {order.items?.map((item) => (
-                      <div key={item.id} className="flex justify-between items-center text-sm font-medium text-slate-700">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs bg-slate-200/70 text-slate-600 font-extrabold px-2 py-0.5 rounded-lg shrink-0">
-                            {item.quantity}x
-                          </span>
-                          <span className="text-slate-800 font-bold tracking-tight">{item.name}</span>
-                        </div>
-                        <span className="text-slate-500 font-mono text-xs">S/. {item.price.toFixed(2)}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center pt-2 gap-4 text-xs font-bold">
-                    <div className="flex items-center gap-2 text-slate-400 font-medium truncate max-w-sm">
-                      <MapPin size={14} className="text-slate-300 shrink-0" />
-                      <p className="truncate">
-                        <span className="text-slate-500 font-bold">Entregar en:</span> {order.address}
-                      </p>
-                    </div>
-                    <div className="flex items-center justify-between sm:justify-end gap-6 bg-slate-50/50 border border-slate-100 sm:border-0 sm:bg-transparent px-4 py-3 sm:p-0 rounded-xl shrink-0">
-                      <div className="text-slate-400 text-right font-semibold hidden sm:block">
-                        <p>Subtotal: S/. {order.subtotal.toFixed(2)}</p>
-                        <p className="text-[10px] font-medium text-slate-400">Envío: S/. {order.deliveryFee.toFixed(2)}</p>
-                      </div>
-                      <div className="text-right flex sm:flex-col justify-between items-center sm:items-end w-full sm:w-auto">
-                        <span className="text-slate-400 font-bold sm:hidden">Total Pagado:</span>
-                        <span className="text-green-600 font-black text-xl font-poppins tracking-tight">
-                          S/. {order.total.toFixed(2)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                </div>
-              );
-            })}
+          <div className="flex flex-col gap-3">
+            {/* 🟢 Renderizamos el componente dinámico expansible */}
+            {filtered.map((order) => (
+              <OrderCard key={order.id} order={order} />
+            ))}
           </div>
         )}
       </div>

@@ -1,11 +1,12 @@
 'use client';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation'; 
+import { useState, Suspense } from 'react'; 
+import { useRouter, useSearchParams } from 'next/navigation'; 
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 
-export function LoginForm() {
+function LoginFields() {
   const router = useRouter(); 
+  const searchParams = useSearchParams(); 
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
@@ -16,9 +17,7 @@ export function LoginForm() {
     setLoading(true);
 
     try {
-      // 🌐 URL del API Gateway dinámica
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-
       console.log("🚀 Intentando conectar al backend en:", `${baseUrl}/auth/login`);
 
       const response = await fetch(`${baseUrl}/auth/login`, {
@@ -34,17 +33,25 @@ export function LoginForm() {
       if (response.ok) {
         toast.success(`¡Bienvenido de nuevo, ${data.name || 'Usuario'}!`);
 
-        localStorage.setItem('token', data.access_token);
+        // 🛡️ Establecemos el estado de sesión seguro coordinado con auth.ts
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('name', data.name || 'Usuario');
+        localStorage.setItem('email', email); // Guardamos el email usado
+        localStorage.setItem('userId', data.userId || data.id || 'uid-mock-123'); // ID para el microservicio de órdenes
         
-        // 🛡️ Normalizamos el rol a mayúsculas para evitar fallos de formato ('user' vs 'USER')
+        // Normalizamos el rol a mayúsculas para evitar fallos de formato
         const userRole = (data.role || 'USER').toUpperCase();
         localStorage.setItem('role', userRole);
 
-        // 🔑 REDIRECCIÓN BLINDADA: Evita la creación de rutas corruptas en el LocalStorage
-        if (userRole === 'ADMIN') {
+        // 🔑 REDIRECCIÓN BLINDADA INTELIGENTE:
+        const redirectParam = searchParams.get('redirect');
+        
+        if (redirectParam) {
+          router.push(redirectParam);
+        } else if (userRole === 'ADMIN') {
           router.push('/admin'); 
         } else {
-          router.push('/user'); // 🍔 Te redirige a la carpeta física app/user existente en tu disco
+          router.push('/user'); 
         }
       } else {
         toast.error(data.message || 'Error al iniciar sesión. Revisa tus credenciales.');
@@ -112,5 +119,13 @@ export function LoginForm() {
         {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
       </button>
     </form>
+  );
+}
+
+export function LoginForm() {
+  return (
+    <Suspense fallback={<div className="p-6 text-center text-sm text-gray-400 animate-pulse">Cargando módulo de acceso...</div>}>
+      <LoginFields />
+    </Suspense>
   );
 }

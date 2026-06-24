@@ -5,17 +5,14 @@ import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 
-// 🟢 Importamos el TopNavbar respetando tu árbol de archivos
 import TopNavbar from '../components/TopNavbar';
-
-// 🧱 Importación de los componentes de la vista del checkout
 import StepIndicator from '../components/checkout/StepIndicator';
 import AddressSection from '../components/checkout/AddressSection';
 import PaymentSection from '../components/checkout/PaymentSection';
 import OrderSummarySidebar from '../components/checkout/OrderSummarySidebar';
 
-// 🔐 Importamos el lector dinámico de sesión real
-import { getUserId } from '../services/auth';
+// 🛡️ Importamos getUserId junto a la validación de sesión
+import { isTokenValid, getUserId } from '../services/auth';
 
 export default function PagoPage() {
   const router = useRouter();
@@ -25,22 +22,32 @@ export default function PagoPage() {
   const [step, setStep] = useState<'address' | 'payment'>('address');
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [loading, setLoading] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(false);
   
   const [address, setAddress] = useState({ street: 'Av. Principal 123', notes: '' });
   const [cardData, setCardData] = useState({ number: '', expiry: '', cvc: '', name: '' });
 
-  // Cargamos los datos del carrito guardados en el navegador al montar la vista
+  // 🛡️ PROTECCIÓN DE RUTA ULTRA ESTRICTA
+  useEffect(() => {
+    if (!isTokenValid()) {
+      toast.error('Tu sesión expiró o es inválida. Por favor inicia sesión.');
+      router.replace('/login?redirect=/cart');
+    } else {
+      setIsAuthorized(true);
+    }
+  }, [router]);
+
+  // Cargamos los datos del carrito guardados en el navegador
   useEffect(() => {
     const savedCart = localStorage.getItem('quickeats_cart');
     const savedRestaurant = localStorage.getItem('quickeats_restaurant');
-    
+
     if (savedCart) setCart(JSON.parse(savedCart));
     if (savedRestaurant) setRestaurant(JSON.parse(savedRestaurant));
   }, []);
 
-  // 🚀 NORMALIZACIÓN DE QA: Asegura compatibilidad si el producto viene anidado o plano
   const normalizedCart = cart.map((item) => {
-    const target = item.product || item; // Si existe item.product usa ese, si no, usa el elemento raíz
+    const target = item.product || item;
     return {
       id: item.id || target.id || target.productId,
       productId: target.productId || target.id || item.productId || item.id,
@@ -50,7 +57,6 @@ export default function PagoPage() {
     };
   });
 
-  // 📊 Cálculos dinámicos globales basados en el carrito normalizado
   const cartTotal = normalizedCart.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const deliveryFee = restaurant?.deliveryFee ?? 0;
   const total = cartTotal + deliveryFee;
@@ -68,21 +74,25 @@ export default function PagoPage() {
     setLoading(true);
 
     try {
-      // 👤 SOLUCIÓN: Obtenemos el ID de sesión dinámico real del usuario logueado
-      const userId = getUserId();
-      
-      if (!userId) {
-        toast.error('Tu sesión expiró o es inválida. Por favor inicia sesión de nuevo.');
-        router.push('/login');
+      if (!isTokenValid()) {
+        toast.error('Sesión inválida.');
+        router.push('/login?redirect=/cart');
         return;
       }
 
-      // 🌐 URL DINÁMICA DEL GATEWAY
+      // 👤 Extraemos el ID único del usuario autenticado de forma dinámica
+      const userId = getUserId();
+      if (!userId) {
+        toast.error('No se pudo determinar el ID de usuario. Reincia sesión.');
+        router.push('/login?redirect=/cart');
+        return;
+      }
+
       const gatewayUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
-      // 📦 MAPEO ESTRICTO PARA TU CREATE-ORDER DTO
+      // 📦 Agregamos el campo 'userId' requerido obligatoriamente por el CreateOrderDto
       const orderPayload = {
-        userId, // 🌟 ID sincronizado con Supabase Auth e Historial
+        userId, // 👈 🟢 CORREGIDO: Inyección del identificador del usuario
         restaurantId: restaurant?.id ?? '',
         restaurantName: restaurant?.name ?? 'Restaurante',
         address: address.street,
@@ -99,7 +109,6 @@ export default function PagoPage() {
         })),
       };
 
-      // 🚀 DISPARO DE PETICIÓN AL API GATEWAY
       const response = await fetch(`${gatewayUrl}/orders`, {
         method: 'POST',
         headers: {
@@ -114,9 +123,7 @@ export default function PagoPage() {
         throw new Error(data.message || 'Hubo un problema al procesar tu pedido.');
       }
 
-      console.log('Orden procesada y guardada con éxito:', data);
       toast.success('¡Pedido realizado con éxito! 🎉');
-      
       localStorage.removeItem('quickeats_cart');
       router.push('/orders'); 
 
@@ -124,17 +131,25 @@ export default function PagoPage() {
       console.error('Error al generar la orden:', error);
       toast.error(error.message || 'No se pudo conectar con el servidor.');
     } finally {
-      // ✨ Corregido: Removido el fragmento de texto roto que causaba los errores 2304 y 1136
       setLoading(false);
     }
   };
+
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="animate-pulse text-slate-400 font-bold text-sm uppercase tracking-wider">
+          Verificando seguridad...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans antialiased pb-16">
       <TopNavbar />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-10">
-        
         <div className="flex items-center gap-4 mb-8">
           <button 
             onClick={() => step === 'payment' ? setStep('address') : router.push('/cart')} 
@@ -143,9 +158,7 @@ export default function PagoPage() {
             <ArrowLeft size={18} className="text-gray-700" />
           </button>
           <div>
-            <h1 className="font-extrabold text-slate-900 tracking-tight text-3xl">
-              Pago
-            </h1>
+            <h1 className="font-extrabold text-slate-900 tracking-tight text-3xl">Pago</h1>
           </div>
         </div>
 
@@ -172,7 +185,6 @@ export default function PagoPage() {
             )}
           </div>
 
-          {/* Resumen de la Orden Lateral */}
           <div>
             <OrderSummarySidebar 
               restaurant={restaurant} 
@@ -183,7 +195,6 @@ export default function PagoPage() {
             />
           </div>
         </div>
-
       </div>
     </div>
   );

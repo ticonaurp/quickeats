@@ -286,27 +286,39 @@ export default function UserPage() {
 
                   {/* Grid de Locales Cerrados */}
                   {closedRestaurants.length > 0 && (
-                    <div className="pt-10 border-t border-slate-100">
-                      <div className="flex items-center gap-2 mb-6">
-                        <div className="w-2 h-2 bg-slate-400 rounded-full animate-ping" />
-                        <h3 className="text-slate-400 text-[10px] font-black tracking-widest uppercase">
-                          Fuera de horario
-                        </h3>
+                    openRestaurants.length > 0 ? (
+                      <div className="pt-10 border-t border-slate-100">
+                        <div className="flex items-center gap-2 mb-6">
+                          <div className="w-2 h-2 bg-slate-400 rounded-full animate-ping" />
+                          <h3 className="text-slate-400 text-[10px] font-black tracking-widest uppercase">
+                            Fuera de horario
+                          </h3>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+                          {closedRestaurants.map((r: Restaurant) => (
+                            <div
+                              key={`closed-${r.id}`}
+                              className="opacity-50 saturate-50 hover:opacity-80 transition-all duration-300 relative"
+                            >
+                              <div className="absolute top-3 right-3 z-30 bg-slate-900/90 backdrop-blur-md text-white font-black text-[9px] px-2.5 py-1 rounded-lg tracking-widest uppercase">
+                                Cerrado
+                              </div>
+                              <RestaurantCard r={r} onClick={() => router.push(`/restaurants/${r.id}`)} />
+                            </div>
+                          ))}
+                        </div>
                       </div>
+                    ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
                         {closedRestaurants.map((r: Restaurant) => (
-                          <div
-                            key={`closed-${r.id}`}
-                            className="opacity-50 saturate-50 hover:opacity-80 transition-all duration-300 relative"
-                          >
-                            <div className="absolute top-3 right-3 z-30 bg-slate-900/90 backdrop-blur-md text-white font-black text-[9px] px-2.5 py-1 rounded-lg tracking-widest uppercase">
-                              Cerrado
-                            </div>
-                            <RestaurantCard r={r} onClick={() => router.push(`/restaurants/${r.id}`)} />
-                          </div>
+                          <RestaurantCard
+                            key={`closed-main-${r.id}`}
+                            r={r}
+                            onClick={() => router.push(`/restaurants/${r.id}`)}
+                          />
                         ))}
                       </div>
-                    </div>
+                    )
                   )}
                 </div>
               )}

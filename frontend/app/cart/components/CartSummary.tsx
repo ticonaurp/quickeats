@@ -1,18 +1,16 @@
 'use client';
 
 import { Utensils, ArrowRight } from 'lucide-react';
-import { useRouter } from 'next/navigation'; // 1. 🟢 Importamos el router
 
 interface CartSummaryProps {
   subtotal: number;
   deliveryFee: number;
   total: number;
   onClearCart: () => void;
+  onProceed: () => void; // 🟢 Recibimos la nueva función de validación
 }
 
-export default function CartSummary({ subtotal, deliveryFee, total, onClearCart }: CartSummaryProps) {
-  const router = useRouter(); // 2. 🟢 Inicializamos el router
-
+export default function CartSummary({ subtotal, deliveryFee, total, onClearCart, onProceed }: CartSummaryProps) {
   return (
     <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm min-h-[200px] flex flex-col font-sans antialiased pb-6">
       
@@ -46,9 +44,9 @@ export default function CartSummary({ subtotal, deliveryFee, total, onClearCart 
               <span className="text-2xl text-[#0F172A] font-black tracking-tight">S/. {total.toFixed(2)}</span>
             </div>
 
-            {/* 3. 🟢 LE AGREGAMOS EL ONCLICK AL BOTÓN PARA IR A PAGO */}
+            {/* 🟢 Cambiado: Ahora ejecuta onProceed que valida el token con redirect inteligente */}
             <button 
-              onClick={() => router.push('/pago')}
+              onClick={onProceed}
               className="w-full bg-[#22C55E] hover:bg-[#16A34A] text-white font-black text-[1rem] py-3.5 px-4 rounded-xl flex items-center justify-center gap-1.5 mt-5 transition-colors shadow-md shadow-green-100 tracking-tight"
             >
               Proceder al Pago

@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation'; // 🟢 Inicialización del router
+import { isTokenValid } from '../services/auth'; // 🟢 Importación de la utilidad de sesión
 import TopNavbar from '../components/TopNavbar';
 import CartHeader from './components/CartHeader';
 import CartItemsList from './components/CartItemsList';
@@ -24,6 +26,7 @@ interface RestaurantInfo {
 }
 
 export default function CartPage() {
+  const router = useRouter(); // 🟢 Instanciamos el router
   const [cart, setCart] = useState<CheckoutCartItem[]>([]);
   const [restaurantInfo, setRestaurantInfo] = useState<RestaurantInfo | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -78,6 +81,16 @@ export default function CartPage() {
     setCart([]);
   };
 
+  // 🟢 Manejo del flujo inteligente de autenticación para el Checkout
+  const handleProceedToPayment = () => {
+    if (isTokenValid()) {
+      router.push('/pago');
+    } else {
+      // Si no es válido, guardamos la intención de compra redirigiendo con el query param
+      router.push('/login?redirect=/cart');
+    }
+  };
+
   // Cálculos matemáticos
   const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const deliveryFee = restaurantInfo?.deliveryFee ?? 0;
@@ -95,7 +108,8 @@ export default function CartPage() {
     <div className="min-h-screen bg-[#F8FAFC] font-sans antialiased pb-16">
       <TopNavbar />
 
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 pt-10">
+      {/* 🛠️ CORREGIDO: Se reemplazó max-w-[1440px] por max-w-360 según sugerencia de Tailwind */}
+      <div className="max-w-360 mx-auto px-4 sm:px-6 pt-10">
         <div className="grid grid-cols-1 md:grid-cols-10 gap-8">
           
           {/* Lado Izquierdo: Lista de ítems */}
@@ -116,11 +130,13 @@ export default function CartPage() {
 
           {/* Lado Derecho: Resumen financiero */}
           <div className="md:col-span-4 sticky top-6 self-start space-y-4">
+            {/* 🟢 CORREGIDO: Inyectamos la prop onProceed que requería TypeScript */}
             <CartSummary 
               subtotal={subtotal}
               deliveryFee={deliveryFee}
               total={total}
               onClearCart={handleClearCart}
+              onProceed={handleProceedToPayment}
             />
 
             {subtotal > 0 && restaurantInfo && (
