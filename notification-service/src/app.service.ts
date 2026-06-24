@@ -2,6 +2,8 @@ import { Injectable, NotFoundException, OnModuleInit, OnModuleDestroy } from '@n
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class AppService implements OnModuleInit, OnModuleDestroy {
@@ -12,8 +14,20 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
   async onModuleInit() {
     const dbUrl = process.env.DATABASE_URL || "postgresql://admin:admin123@localhost:5432/delivery_db?schema=public";
 
-    // 2. Creamos un pool de conexiones nativo de PostgreSQL usando la URL
-    this.pool = new Pool({ connectionString: dbUrl });
+    // 2. Resolvemos el certificado CA: ruta del contenedor con fallback local
+    const containerCertPath = '/app/supabase-ca.crt';
+    const localCertPath = path.join(process.cwd(), 'supabase-ca.crt');
+    const certPath = fs.existsSync(containerCertPath) ? containerCertPath : localCertPath;
+
+    const sslConfig = fs.existsSync(certPath)
+      ? {
+          rejectUnauthorized: true,
+          ca: fs.readFileSync(certPath, 'utf8'),
+        }
+      : false;
+
+    // 3. Creamos un pool de conexiones nativo de PostgreSQL usando la URL y SSL
+    this.pool = new Pool({ connectionString: dbUrl, ssl: sslConfig });
     
     // 3. Instanciamos el adaptador oficial que exige Prisma 7
     const adapter = new PrismaPg(this.pool);

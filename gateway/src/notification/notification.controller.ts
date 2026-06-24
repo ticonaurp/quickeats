@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Res, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Res, HttpStatus } from '@nestjs/common';
 import { type Response } from 'express';
 
 @Controller('notifications') // http://localhost:3001/notifications
@@ -31,6 +31,21 @@ export class NotificationController {
   async findNotificationsByUser(@Param('userId') userId: string, @Res() res: Response) {
     try {
       const response = await fetch(`${this.NOTIFICATION_SERVICE_URL}/${userId}`);
+      const data = await response.json();
+      return res.status(response.status).json(data);
+    } catch (error) {
+      return res.status(HttpStatus.BAD_GATEWAY).json({
+        message: 'No se pudo conectar con el microservicio de notificaciones.',
+      });
+    }
+  }
+
+  @Patch(':id/read')
+  async markAsRead(@Param('id') id: string, @Res() res: Response) {
+    try {
+      const response = await fetch(`${this.NOTIFICATION_SERVICE_URL}/${id}/read`, {
+        method: 'PATCH',
+      });
       const data = await response.json();
       return res.status(response.status).json(data);
     } catch (error) {
