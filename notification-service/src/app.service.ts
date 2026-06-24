@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, NotFoundException, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
@@ -35,6 +35,20 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
       where: { userId },
       orderBy: { createdAt: 'desc' },
     });
+  }
+
+  async markAsRead(id: string) {
+    try {
+      return await this.prisma.notification.update({
+        where: { id },
+        data: { isRead: true },
+      });
+    } catch (error: any) {
+      if (error?.code === 'P2025') {
+        throw new NotFoundException('La notificación que intentas actualizar no existe.');
+      }
+      throw error;
+    }
   }
 
   async onModuleDestroy() {

@@ -9,7 +9,7 @@ export class OrderService {
   async create(createOrderDto: CreateOrderDto) {
     const { items, ...orderData } = createOrderDto;
 
-    return this.prisma.order.create({
+    const order = await this.prisma.order.create({
       data: {
         ...orderData,
         items: {
@@ -25,6 +25,26 @@ export class OrderService {
         items: true,
       },
     });
+
+    await this.notifyOrderCreated(order.userId);
+
+    return order;
+  }
+
+  // 🔔 Avisa al notification-service que la orden se creó. No debe romper el flujo de creación si falla.
+  private async notifyOrderCreated(userId: string) {
+    try {
+      await fetch('http://notification-service:3005/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          message: 'Tu orden ha sido creada exitosamente',
+        }),
+      });
+    } catch (error) {
+      console.error('No se pudo notificar la creación de la orden:', error);
+    }
   }
 
   async findAll() {

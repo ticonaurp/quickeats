@@ -1,4 +1,5 @@
 import { Controller, Post, Body, Get, UseGuards, Request, Res } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import * as express from 'express'; // 👈 Cambiamos el tipo de importación
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -12,11 +13,13 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
+  @Throttle({ default: { limit: 5, ttl: 60000 } }) // máx. 5 intentos por minuto
   async register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
   }
 
   @Post('login')
+  @Throttle({ default: { limit: 5, ttl: 60000 } }) // máx. 5 intentos por minuto
   async login(
     @Body() dto: LoginDto,
     @Res({ passthrough: true }) res: express.Response // 👈 Ajustado aquí

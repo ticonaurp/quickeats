@@ -1,5 +1,3 @@
-@AGENTS.md
-
 ## Reglas
 - NO ejecutar npm run build
 - NO ejecutar npm install

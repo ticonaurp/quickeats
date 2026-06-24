@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Clock, Bike, Shield, Smartphone, Zap, Lock, UtensilsCrossed, Star, MapPin } from 'lucide-react'; 
+import { ArrowRight, Clock, Bike, Shield, Smartphone, Zap, Lock, UtensilsCrossed, Star, MapPin, Search, ShoppingBag } from 'lucide-react';
 import { Navbar } from './components/Navbar';
 import { fetchFromGateway } from './services/api';
 import { Restaurant } from './data/mockData';
@@ -66,6 +66,11 @@ export default function Home() {
         .animate-marquee:hover {
           animation-play-state: paused;
         }
+        @media (prefers-reduced-motion: reduce) {
+          .animate-marquee {
+            animation: none;
+          }
+        }
       `}</style>
 
       <Navbar />
@@ -103,17 +108,34 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-2">
               <Link
                 href="/register"
-                className="group inline-flex items-center justify-center gap-3 px-8 py-4.5 rounded-2xl bg-slate-900 text-white font-bold text-base transition-all shadow-xl shadow-slate-900/10 hover:bg-amber-500 hover:shadow-amber-500/20 hover:scale-[1.02]"
+                className="group inline-flex items-center justify-center gap-3 px-8 py-4.5 rounded-2xl bg-slate-900 text-white font-bold text-base transition-all shadow-xl shadow-slate-900/10 hover:bg-amber-500 hover:shadow-amber-500/20 hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
               >
                 Comenzar a pedir
                 <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
               </Link>
               <Link
                 href="/login"
-                className="inline-flex items-center justify-center px-8 py-4.5 rounded-2xl text-slate-700 font-bold text-base bg-white border border-slate-200 shadow-xs hover:border-slate-300 hover:text-slate-900 transition-all"
+                className="inline-flex items-center justify-center px-8 py-4.5 rounded-2xl text-slate-700 font-bold text-base bg-white border border-slate-200 shadow-xs hover:border-slate-300 hover:text-slate-900 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
               >
                 Explorar locales cercanos
               </Link>
+            </div>
+
+            <div className="flex items-center gap-6 sm:gap-10 pt-6 justify-center lg:justify-start">
+              <div className="text-center lg:text-left">
+                <p className="text-2xl font-black text-slate-900 font-poppins">500+</p>
+                <p className="text-xs text-slate-500 font-semibold">Restaurantes</p>
+              </div>
+              <div className="w-px h-10 bg-slate-200" aria-hidden="true" />
+              <div className="text-center lg:text-left">
+                <p className="text-2xl font-black text-slate-900 font-poppins">&lt;24 min</p>
+                <p className="text-xs text-slate-500 font-semibold">Entrega promedio</p>
+              </div>
+              <div className="w-px h-10 bg-slate-200" aria-hidden="true" />
+              <div className="text-center lg:text-left">
+                <p className="text-2xl font-black text-slate-900 font-poppins">4.8</p>
+                <p className="text-xs text-slate-500 font-semibold">Calificación promedio</p>
+              </div>
             </div>
           </div>
 
@@ -175,7 +197,7 @@ export default function Home() {
         <div className="absolute left-0 top-0 bottom-0 w-24 bg-linear-to-r from-white to-transparent z-10" />
         <div className="absolute right-0 top-0 bottom-0 w-24 bg-linear-to-l from-white to-transparent z-10" />
         
-        <div className="animate-marquee gap-4">
+        <div className="animate-marquee gap-4" aria-hidden="true">
           {[...cravings, ...cravings, ...cravings].map((craving, idx) => (
             <div
               key={idx}
@@ -240,8 +262,35 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 🍽️ RESTAURANTES DESTACADOS */}
+      {/* 🛵 CÓMO FUNCIONA */}
       <section className="py-24 bg-slate-50/70 border-t border-slate-100/60">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="text-center max-w-xl mx-auto mb-16">
+            <h2 className="text-4xl font-black text-slate-900 mb-3 font-poppins tracking-tight">¿Cómo funciona?</h2>
+            <p className="text-slate-500 font-medium text-base">Tres pasos entre tú y tu próxima comida favorita.</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+            {[
+              { icon: Search, step: '01', title: 'Explora', desc: 'Descubre los restaurantes cercanos a ti, filtrados por antojo, categoría y calificación.' },
+              { icon: ShoppingBag, step: '02', title: 'Pide', desc: 'Agrega tus platillos favoritos al carrito y paga de forma segura en segundos.' },
+              { icon: Bike, step: '03', title: 'Recibe', desc: 'Sigue a tu repartidor en tiempo real hasta que tu pedido llegue a tu puerta.' },
+            ].map(({ icon: Icon, step, title, desc }) => (
+              <div key={step} className="bg-white rounded-4xl p-8 border border-slate-100 shadow-xs relative overflow-hidden group hover:shadow-lg transition-shadow">
+                <span className="absolute -top-2 -right-2 text-7xl font-black text-slate-50 font-poppins select-none">{step}</span>
+                <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 mb-5 relative z-10 group-hover:scale-110 transition-transform">
+                  <Icon size={22} />
+                </div>
+                <h3 className="font-extrabold text-slate-900 text-lg mb-2 font-poppins tracking-tight relative z-10">{title}</h3>
+                <p className="text-slate-500 text-sm font-medium leading-relaxed relative z-10">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 🍽️ RESTAURANTES DESTACADOS */}
+      <section className="py-24 bg-white border-t border-slate-100/60">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-12 gap-4">
             <div>
@@ -249,8 +298,15 @@ export default function Home() {
               <p className="text-slate-500 mt-1 font-medium text-sm">Lo más pedido, mejor calificado y amado por la comunidad de Lima.</p>
             </div>
             <div className="h-px bg-slate-200 flex-1 hidden sm:block mx-8 mb-3" />
+            <Link
+              href="/restaurants"
+              className="group inline-flex items-center gap-2 text-sm font-bold text-amber-600 hover:text-amber-700 transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 rounded-lg"
+            >
+              Ver todos
+              <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+            </Link>
           </div>
-          
+
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
               {[1, 2, 3].map((n) => (
@@ -278,9 +334,10 @@ export default function Home() {
                 const imageSrc = hasValidImage ? restaurant.image : 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=500&q=80';
 
                 return (
-                  <div 
-                    key={restaurant.id} 
-                    className={`bg-white rounded-4xl overflow-hidden border border-slate-100 flex flex-col justify-between group relative transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-slate-200/80 ${
+                  <Link
+                    href={`/restaurants/${restaurant.id}`}
+                    key={restaurant.id}
+                    className={`bg-white rounded-4xl overflow-hidden border border-slate-100 flex flex-col justify-between group relative transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-slate-200/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 ${
                       !isCurrentlyOpen ? 'opacity-65 saturate-50' : ''
                     }`}
                   >
@@ -340,7 +397,7 @@ export default function Home() {
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 );
               })}
             </div>
@@ -360,9 +417,9 @@ export default function Home() {
             Regístrate en menos de 30 segundos, accede a cupones exclusivos de bienvenida y experimenta el verdadero delivery en alta velocidad.
           </p>
           <div className="pt-4">
-            <Link 
-              href="/register" 
-              className="inline-flex items-center gap-2 px-8 py-4.5 bg-amber-500 rounded-2xl font-bold text-base text-white transition-all shadow-xl shadow-amber-500/20 hover:bg-amber-600 hover:scale-105"
+            <Link
+              href="/register"
+              className="inline-flex items-center gap-2 px-8 py-4.5 bg-amber-500 rounded-2xl font-bold text-base text-white transition-all shadow-xl shadow-amber-500/20 hover:bg-amber-600 hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
             >
               Crear Cuenta Sin Costo <ArrowRight size={18} />
             </Link>

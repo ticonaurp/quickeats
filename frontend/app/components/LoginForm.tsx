@@ -107,7 +107,7 @@ export function LoginForm() {
       <button
         type="submit"
         disabled={loading}
-        className="w-full py-4 rounded-xl bg-green-500 text-white font-semibold text-lg transition-all hover:bg-green-600 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-6"
+        className="w-full py-4 rounded-xl bg-slate-900 text-white font-semibold text-lg transition-all hover:bg-amber-500 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-6"
       >
         {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
       </button>
