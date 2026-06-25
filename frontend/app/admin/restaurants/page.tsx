@@ -21,6 +21,14 @@ interface Restaurant {
   image: string;
 }
 
+// Imagen de respaldo cuando un restaurante tiene un valor de imagen inválido en la BD.
+const FALLBACK_IMG = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=200&q=80';
+
+// Un src válido debe ser una URL http(s) o una ruta absoluta. Si no, devolvemos el fallback.
+// Sin esto, valores basura (ej. "d", "dw") hacían que el navegador pidiera /admin/d → 404.
+const safeImage = (img: unknown): string =>
+  typeof img === 'string' && (img.startsWith('http') || img.startsWith('/')) ? img : FALLBACK_IMG;
+
 export default function RestaurantsPage() {
   const [search, setSearch] = useState('');
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]); 
@@ -90,7 +98,7 @@ export default function RestaurantsPage() {
           deliveryTime: typeof r.deliveryTime === 'number' ? `${r.deliveryTime} min` : (r.deliveryTime ?? '30 min'),
           deliveryFee: Number(r.deliveryFee ?? 0),
           isOpen: Boolean(r.isOpen),
-          image: r.image ?? ''
+          image: safeImage(r.image)
         }));
 
         setRestaurants(formattedData);
@@ -110,10 +118,11 @@ export default function RestaurantsPage() {
     // 1. Ejecución inicial limpia
     loadRestaurants(true);
 
-    // 2. ⏱️ POLLING OPTIMIZADO: Consulta en silencio cada 2 segundos sin recrearse cíclicamente
+    // 2. ⏱️ POLLING: refresco en silencio cada 15s. (Antes era cada 2s: 30 req/min por admin,
+    // golpeaba el Gateway/Supabase sin necesidad; el toggle ya hace optimistic update inmediato.)
     const interval = setInterval(() => {
       loadRestaurants(false);
-    }, 2000);
+    }, 15000);
 
     // 3. 🧹 LIMPIEZA AUTOMÁTICA AL DESMONTAR
     return () => clearInterval(interval);

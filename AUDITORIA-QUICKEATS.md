@@ -290,4 +290,205 @@ Sí, el lag es **esperable** con este montaje, por varias razones acumuladas:
 
 ---
 
-*Parte I: auditoría de solo lectura. Parte II: correcciones de integración sobre archivos fuente. Parte III: diagnóstico en runtime sobre Docker y fix definitivo del 500 (TLS Supabase), verificado con los contenedores en ejecución.*
+---
+
+# PARTE IV — Frontend: sesión, landing y Panel de Admin con datos reales (2026-06-25)
+
+## A. Usuario "fantasma" en el Navbar (sesión falsa)
+**Problema:** la landing mostraba `usuario@quickeats.com` como si hubiera sesión iniciada, sin que nadie se logueara.
+**Causa:** `getUserEmail()` en `frontend/app/services/auth.ts` devolvía ese email de relleno aunque no hubiera sesión, y el Navbar lo interpretaba como usuario logueado.
+**Fix:**
+- `auth.ts`: `getUserEmail()` ahora devuelve `null` salvo que `localStorage.isLoggedIn === 'true'`.
+- `Navbar.tsx`: `handleLogout()` ahora limpia **todas** las claves de sesión (`token`, `role`, `isLoggedIn`, `email`, `userId`, `name`); antes quedaban `email`/`isLoggedIn` y el usuario "seguía logueado" tras cerrar sesión.
+**Efecto:** sin sesión → se ven "Iniciar Sesión / Empezar"; el usuario solo aparece tras loguearse de verdad.
+
+## B. Landing: badge sin sentido eliminado
+Se quitó el badge **"Mango Engine v2.1 — Todo Lima Metropolitana"** del hero en `frontend/app/page.tsx` (texto decorativo sin significado real).
+
+## C. Panel de Admin (`/admin`) conectado a datos reales
+**Problema:** TODO el dashboard estaba **hardcodeado** (mock). Mostraba 3 restaurantes / 31 productos / 12 pedidos / S/ 4,850.00 y listas inventadas (The Burger Lab, Sakura Ramen, etc.) que no existen en la BD.
+
+**Solución:** `frontend/app/admin/page.tsx` ahora hace **una sola tanda de peticiones en paralelo** (`Promise.all` a `/restaurants`, `/products`, `/orders` vía Gateway) y calcula todas las métricas en cliente, pasándolas como props a los componentes (que se refactorizaron para recibir datos en vez de tener mocks).
+
+| Bloque | Antes (mock) | Ahora (real, calculado de la BD) |
+|---|---|---|
+| StatCard **Ingresos Totales** | S/ 4,850.00 fijo | Suma real de `order.total` → **S/ 786.40** |
+| StatCard **Pedidos** | "12 Activos" fijo | `orders.length` real → **7** |
+| StatCard **Restaurantes** | 3 fijo | `restaurants.length` → **24** |
+| StatCard **Productos** | 31 fijo | `products.length` → **53** |
+| **Pedidos Recientes** | 3 órdenes inventadas | Órdenes reales ordenadas por `createdAt`, con `restaurantName`, `total` (S/) y estado real (PENDING→Pendiente, etc.) |
+| **Mejores Restaurantes** | rating/reviews falsos (4.8, "2,341 reviews") | Renombrado a **"Restaurantes con más pedidos"**: ranking real por nº de órdenes (no hay rating en la BD, así que se eliminó ese dato inventado) |
+| **Pedidos por Categoría** | Burgers 32%, Pizza 24%… fijos | % real por categoría del restaurante de cada orden → Burgers 43%, Pollerías 29%, Chicken 29% |
+| **Vista General de Ingresos** | 6 meses inventados en `$` | **"Ingresos por mes"** real: agrupa `order.total` por mes (últimos 6) en **S/** |
+
+**Datos quitados por no tener sentido / no existir en la BD:**
+- Badge decorativo **"Sistemas Sincronizados"** del header.
+- **Rating (4.8★) y "X reviews"** de los restaurantes (no hay esas columnas en el esquema).
+- Imágenes/nombres de restaurantes inventados; ahora se usan los reales (o inicial como avatar si la orden no tiene imagen asociada).
+
+**Estados y rendimiento:**
+- Cada bloque tiene **estado de carga** (skeletons) y **estado vacío** ("Aún no hay pedidos…") en vez de datos falsos.
+- Se eliminó el `if (!mounted) return null` que dejaba la pantalla en blanco hasta montar; ahora el layout aparece de inmediato con skeletons mientras llega la data (mejor percepción de velocidad).
+- **Sobre la lentitud al entrar a `/admin`:** es mayormente **compilación de Next.js en modo dev** (Turbopack compila la ruta y el bundle de `recharts`, que es pesado) corriendo sobre OneDrive — no es la data. Una build de producción (`next build`) carga muy rápido. El fetch ya es óptimo (una sola tanda en paralelo, no 4 llamadas separadas por componente).
+
+**Archivos modificados:** `frontend/app/admin/page.tsx`, `frontend/app/admin/components/RecentOrders.tsx`, `frontend/app/admin/components/TopRestaurants.tsx`, `frontend/app/admin/components/CategoryChart.tsx`, `frontend/app/admin/components/RevenueChart.tsx`, `frontend/app/services/auth.ts`, `frontend/app/components/Navbar.tsx`, `frontend/app/page.tsx`.
+
+---
+
+---
+
+# PARTE V — Flujo "Restaurantes" del Panel de Admin (2026-06-25)
+
+> Se auditó toda la vista `/admin/restaurants` (listado, búsqueda, toggle de estado, crear y editar). Se encontraron 5 problemas y se corrigieron.
+
+## A. 🐞 Imágenes rotas → 404 `GET /admin/d` y `/admin/dw`
+**Síntoma:** la consola lanzaba `GET http://localhost:3000/admin/d 404` y `/admin/dw 404` desde `RestaurantTable.tsx:44`.
+**Causa:** dos restaurantes de prueba en la BD tienen el campo `image` con basura: `'Prueba 2' → image="d"` y `'Prueba detalle cuidado' → image="dw"`. El `<img src="d">` es relativo, así que el navegador lo resolvía contra `/admin/` → `/admin/d` → 404.
+**Fix (frontend, robustez):**
+- `admin/restaurants/page.tsx`: helper `safeImage()` en el mapeo — si `image` no es una URL `http(s)`/ruta absoluta, usa una imagen de respaldo.
+- `RestaurantTable.tsx` y `RestaurantMobileList.tsx`: además se añadió `onError` en los `<img>` para caer al fallback si la URL remota falla.
+> Las dos filas de prueba siguen en la BD; conviene borrarlas desde el panel, pero ya no rompen nada.
+
+## B. 🐞 "Todos los restaurantes aparecen Cerrado" y el toggle no hacía nada
+**Causa:** `restaurant-service` calcula `isOpen` dinámicamente con `checkIsOpen()` = `flagManual && dentroDeHorario`. La **mayoría de restaurantes no tienen horarios** (`openingHours` vacío) → `checkIsOpen` devolvía `false` siempre → salían "Cerrado" y el toggle manual del admin quedaba **anulado** (aunque hicieras PATCH `isOpen:true`, el GET seguía calculando `false`).
+**Fix (backend, `restaurant-service/src/restaurant/restaurant.service.ts`):** si el restaurante **no tiene ningún horario configurado**, `checkIsOpen` ahora **respeta el switch manual `isOpen`** en vez de forzar cerrado. Los que sí tienen horarios siguen rigiéndose por la hora.
+**Verificado en runtime** (tras recrear el contenedor):
+- Restaurantes sin horarios → `isOpen=true` (respetan el flag) y el toggle PATCH→GET funciona (`true`↔`false`).
+- `Pollo Supremo` / `Dragon Chino` (con 7 horarios 09:00–22:00) → `isOpen=false` correctamente, porque la prueba se hizo 00:19 a.m.
+
+## C. 🐞 Edición de restaurante: payload contaminado
+**Causa:** en modo edición, `RestaurantForm` cargaba el form con `setForm({ ...existing })` (la respuesta del GET), que incluye `id`, `createdAt` y el `isOpen` **ya calculado**. Al guardar, el `payload = { ...form }` enviaba todo eso en el `PATCH`. Como el controlador de update usa `@Body() dto: any` (sin DTO ni whitelist), esos campos llegaban crudos a `prisma.restaurant.update()` (intento de escribir `id`/`createdAt`) y se **reescribía el flag manual con el valor calculado por hora**.
+**Fix:** `handleSubmit` ahora construye un **payload explícito** solo con los campos editables (`name`, `description`, `category`, `address`, `deliveryTime`, `deliveryFee`, `isOpen`, `isFeatured`, `image`, `openingHours`). Sin `id` ni `createdAt`.
+
+## D. 🧹 Rating/reviews falsos en la lista móvil
+`RestaurantMobileList` mostraba una estrella con `{r.rating}` (que por defecto era 4.5, **no existe rating en la BD**). La tabla de escritorio ya lo había quitado; se eliminó también del móvil para que ambas vistas sean consistentes y honestas.
+
+## E. ⚡ Polling cada 2 segundos → demasiado agresivo
+`admin/restaurants/page.tsx` re-consultaba `/restaurants` **cada 2s** (30 req/min por cada admin con la pestaña abierta), golpeando Gateway/Supabase sin necesidad. Se subió a **15s**. El toggle ya hace *optimistic update* inmediato, así que no se pierde reactividad.
+
+**Archivos modificados (Parte V):** `frontend/app/admin/restaurants/page.tsx`, `frontend/app/admin/restaurants/components/RestaurantTable.tsx`, `frontend/app/admin/restaurants/components/RestaurantMobileList.tsx`, `frontend/app/admin/restaurants/components/RestaurantForm.tsx`, `restaurant-service/src/restaurant/restaurant.service.ts` (requirió recrear el contenedor `restaurant-service`).
+
+---
+
+---
+
+# PARTE VI — Flujo "Productos" del Panel de Admin (2026-06-25)
+
+> Se auditó toda la vista `/admin/products` (listado, búsqueda/filtro, tarjeta, crear, editar, eliminar, disponibilidad) + el backend de productos del `restaurant-service`.
+
+## A. ✅ Backend de productos: correcto (verificado en runtime)
+A diferencia del flujo de restaurantes, el `restaurant-service` de productos **elige campos explícitos** en `create()` y `update()`, así que NO sufre el problema de payload contaminado. CRUD probado de punta a punta vía Gateway:
+- `POST /products` → **201** (crea)
+- `PUT /products/:id` → **200** (actualiza nombre, categoría, disponibilidad)
+- `DELETE /products/:id` → **200** (elimina)
+
+## B. 🖼️ Imágenes que "se muestren correctamente" (lo que pediste)
+**Problema:** ni la tarjeta del listado ni los formularios tenían respaldo ni previsualización. Si un producto tuviera una URL inválida (como pasó en restaurantes con `"d"`/`"dw"`), la imagen rompía; y al **crear/editar** el admin no veía la imagen hasta guardar.
+**Fix:**
+- `ProductCardAdmin.tsx`: `onError` en el `<img>` → si la URL falla, cae a una imagen de comida de respaldo (no más imágenes rotas en el grid).
+- **Previsualización en vivo** añadida en los formularios de **crear** (`products/new/page.tsx`) y **editar** (`products/[id]/edit/page.tsx`): al pegar/editar la URL, el admin ve la imagen al instante (con `onError` al mismo fallback). *(Nota: hoy ningún producto tiene imágenes inválidas en la BD; esto es robustez + la mejora de UX que pediste.)*
+
+## C. 🏷️ Inconsistencia de categorías (listado fijo vs BD real)
+**Problema:** el `<select>` de categoría ofrece valores fijos en inglés (`Burgers, Chicken, Sides, Drinks, Ramen, Pizza, Starters, Desserts, Bowls, Salads, Pasta, BBQ, Tacos, Burritos, Rice Bowls, Grilled, Stews`), pero la BD tiene muchas categorías que **no están en esa lista**: `Chifa, Risotto, Pollo, Combos, Tortas, Postres, Bebidas, Sushi, Smoothies, Chaufa, Rolls, Tallarín, Ensaladas, General`. Al **editar** un producto con categoría `Chifa`/`Combos`, el select no encontraba la opción → aparecía **en blanco** (riesgo de guardar una categoría equivocada sin querer).
+**Fix:** en el formulario de editar, si la categoría guardada no está en la lista fija, se **añade dinámicamente como opción** (`"Chifa (actual)"`) para que aparezca seleccionada y no se pierda.
+> Recomendación pendiente (decisión del equipo): **unificar el catálogo de categorías**. Hoy hay duplicados por idioma (`Pollo`↔`Chicken`, `Bebidas`↔`Drinks`, `Postres`↔`Desserts`) que fragmentan los datos. Conviene definir una sola lista canónica y normalizar los productos.
+
+## D. Observaciones menores (no bloqueantes, no modificadas)
+- El filtro por restaurante lista **todos** los restaurantes, incluidos los de prueba (`Prueba 2`, `bbbb`, `a`). Es data de prueba; conviene borrarlos desde el panel.
+- Los formularios de producto usan acento de color **verde** (`#22C55E`), mientras el resto del admin ya es **mango/ámbar**. Inconsistencia solo estética; no se tocó para no mezclar con los fixes funcionales.
+- La etiqueta "X restaurantes activos" en realidad muestra el total de restaurantes, no solo los activos.
+
+**Archivos modificados (Parte VI):** `frontend/app/admin/products/components/ProductCardAdmin.tsx`, `frontend/app/admin/products/new/page.tsx`, `frontend/app/admin/products/[id]/edit/page.tsx`.
+
+---
+
+---
+
+# PARTE VII — Unificación de categorías, limpieza de datos y estética (2026-06-25)
+
+> Se aplicaron las 3 acciones acordadas sobre las observaciones de la Parte VI.
+
+## A. 🗑️ Borrado de restaurantes de prueba (operación de datos)
+**Pendiente:** la BD tenía registros basura: `Prueba 2`, `Prueba detalle cuidado`, `bbbb`, `a` (los que generaban los 404 `/admin/d`, `/admin/dw` y ensuciaban el filtro de productos).
+**Detalle técnico:** **no existe endpoint DELETE de restaurantes** ni en el Gateway ni en el `restaurant-service` (solo POST/GET/PATCH). Los 4 registros tenían **0 productos y 0 horarios** (verificado), así que se borraron de forma segura ejecutando un `DELETE` parametrizado contra Supabase a través del contenedor (`docker exec quickeats_restaurant node` con el driver `pg`).
+**Resultado:** **24 → 20 restaurantes**, sin registros de prueba. *(Recomendación: si se quiere borrar desde la UI a futuro, falta crear el endpoint DELETE + botón en el panel.)*
+
+## B. 🏷️ Unificación del catálogo de categorías (sin duplicados por idioma)
+**Problema (Parte VI.C):** coexistían categorías equivalentes en dos idiomas → datos fragmentados.
+**Migración de datos en Supabase** (mismo script, parametrizado):
+| Antes (inglés) | Ahora (canónico) | Productos migrados |
+|---|---|---|
+| `Chicken` | `Pollo` | 3 |
+| `Drinks` | `Bebidas` | 7 |
+| `Desserts` | `Postres` | 2 |
+| `Salads` | `Ensaladas` | 0 (no había) |
+**Catálogo único en código:** nuevo archivo `frontend/app/admin/products/categories.ts` con `PRODUCT_CATEGORIES` (20 categorías, sin duplicados, valor en BD + etiqueta en español). Los formularios de **crear** y **editar** ahora generan el `<select>` desde ese catálogo (antes cada uno tenía su lista hardcodeada con valores en inglés que no cuadraban con la BD). Se mantiene la salvaguarda "(actual)" por si apareciera una categoría legacy fuera del catálogo.
+**Resultado:** 20 categorías canónicas (`Bebidas, Pollo, Pizza, Burgers, Postres, Sides, Pasta, Starters, Chifa, Tortas, Combos, General, Chaufa, Rolls, Bowls, Smoothies, Sushi, Ensaladas, Tallarín, Risotto`). Editar cualquier producto ya muestra su categoría correctamente.
+
+## C. 🎨 Formularios de producto a identidad Mango/ámbar
+Los formularios de crear/editar usaban acento **verde** (`#22C55E`, `green-500/600`), inconsistente con el resto del admin. Se cambiaron a **mango/ámbar**:
+- Icono de cabecera: gradiente `from-amber-500 to-orange-500`.
+- Botón de envío (Crear/Guardar): gradiente mango con `shadow-orange-500/10`.
+- Bordes de foco de inputs/selects: `focus:border-amber-500`.
+- `ToggleSwitch` (Disponible/Popular): estado activo `bg-amber-500`.
+**Archivos:** `products/new/page.tsx`, `products/[id]/edit/page.tsx`, `products/new/components/ToggleSwitch.tsx`, nuevo `products/categories.ts`.
+
+---
+
+---
+
+# PARTE VIII — Flujo "Pedidos" del Panel de Admin (2026-06-25)
+
+> Se auditó toda la vista `/admin/orders` (listado, filtros por estado, búsqueda, cambio de estado) y se mejoró el frontend para que luzca más profesional.
+
+## A. ✅ Backend verificado en runtime
+La acción clave (cambiar el estado de un pedido) funciona de punta a punta vía Gateway: `PATCH /orders/:id/status` → **200**, el estado persiste correctamente (`PENDING`↔`PREPARING`…).
+
+## B. 🐞 Bugs corregidos
+1. **`className` basura con caracteres chinos:** la celda de "Acción" tenía `className="px-6 py-4 指定-width-select whitespace-nowrap"`. `指定-width-select` es texto inválido que quedó pegado por error. Eliminado.
+2. **Texto sin sentido "Mango Engine v2.1"** en el subtítulo (el mismo que ya se quitó de la landing). Reemplazado por una descripción real: *"Administra y actualiza el estado de los pedidos en tiempo real"*.
+3. **El estado `error` nunca se seteaba:** el `catch` tenía un comentario "no seteamos el error" tanto en la carga inicial como en el polling, así que el bloque de error de la UI era **código muerto** (si el backend fallaba al cargar, se veía "No se encontraron pedidos" en vez de un error). Ahora se distingue **carga inicial** (sí muestra error) del **polling** (silencioso para no interrumpir).
+4. **Patrón `mounted` innecesario:** `setMounted(true/false)` + `if (!mounted) return null` dejaba la pantalla en blanco hasta montar y hacía un `setState` en el cleanup (warning de React). Eliminado; ahora renderiza de inmediato con su estado de carga.
+
+## C. 🎨 Rediseño profesional
+- **Tarjetas resumen en vivo** (reutilizando el `StatCard` del dashboard, calculadas con `useMemo`): **Pedidos totales**, **Ingresos** (suma de pedidos no cancelados), **Pendientes** y **Entregados**. Dan contexto inmediato como en un panel real.
+- **Badge de método de pago** (Tarjeta 💳 / Efectivo) en cada pedido (tabla de escritorio y vista móvil), usando el campo `paymentMethod` que antes no se mostraba.
+- **Estado con color en el desplegable de acción:** el `<select>` ahora tiñe su texto según el estado (gris/ámbar/naranja/verde/rojo), coherente con la píldora de estado.
+- Cabecera con tipografía `font-poppins` y subtítulo útil.
+
+> Los chips de filtro por estado, la búsqueda (ID/cliente/restaurante/plato) y el bloqueo del cambio de estado en pedidos finales (Entregado/Cancelado) ya funcionaban correctamente y se conservaron.
+
+**Archivos modificados (Parte VIII):** `frontend/app/admin/orders/page.tsx`.
+
+---
+
+---
+
+# PARTE IX — Métrica de ingresos coherente + Sidebar colapsable (2026-06-25)
+
+## A. 💰 "Ingresos": qué tomaba y cuál es el correcto
+**Diferencia detectada:** el Dashboard mostraba **S/ 786.40** y la página de Pedidos **S/ 732.00**.
+- Dashboard (`Ingresos Totales`): sumaba **TODOS** los pedidos, **incluido 1 cancelado** de S/ 54.40.
+- Pedidos (`Ingresos sin cancelados`): sumaba solo los no cancelados.
+- `786.40 − 54.40 = 732.00`.
+
+**Cuál es el correcto:** **S/ 732.00**. Un pedido **cancelado no genera ingreso real**, así que no debe contarse. El 786.40 del dashboard estaba mal.
+**Fix:** el Dashboard ahora calcula `Ingresos = Σ total de pedidos con status ≠ CANCELLED` → **732.00**, igual que Pedidos (ya no hay discrepancia). En la tarjeta de Pedidos se simplificó la etiqueta de `Ingresos (sin cancelados)` a **`Ingresos`** porque, al usar ambos la misma definición, el paréntesis era redundante.
+**Archivos:** `frontend/app/admin/page.tsx`, `frontend/app/admin/orders/page.tsx`.
+
+## B. 🍔 Sidebar del admin colapsable (menú hamburguesa)
+**Mejora pedida:** poder colapsar el menú y que, al cerrarlo, se vean solo los **iconos** de cada módulo, sin bugs visuales.
+**Implementación (`frontend/app/admin/components/Sidebar.tsx`):**
+- Botón de toggle (icono **hamburguesa** al estar colapsado / **panel-left-close** al estar expandido).
+- **Expandido (`w-64`):** logo + texto, badge de perfil con email, items con icono + etiqueta.
+- **Colapsado (`w-20`):** solo el logo "Q", un avatar circular con la inicial del admin, y los items como **iconos centrados**. Cada icono lleva `title` (tooltip nativo) con el nombre del módulo para no perder contexto.
+- **Preferencia persistida** en `localStorage` (`admin_sidebar_collapsed`) para que el estado se mantenga al navegar entre módulos.
+- **Sin parpadeo:** la transición de ancho se **activa recién después del montaje** (`requestAnimationFrame`), así el colapso inicial al cargar/navegar no se anima (evita el "salto" visual); solo anima cuando el usuario pulsa el toggle.
+**Bugs corregidos de paso en el Sidebar:**
+- Import roto `import Link from 'next/navigation'` (default export inexistente; quedaba sin usar) → eliminado.
+- `handleLogout` solo borraba `token`/`role`; ahora limpia **todas** las claves de sesión (igual que el Navbar del cliente).
+- Se quitó `scale-102` (clase no estándar, no hacía nada) del item activo.
+
+---
+
+*Parte I: auditoría de solo lectura. Parte II: correcciones de integración sobre archivos fuente. Parte III: diagnóstico en runtime sobre Docker y fix definitivo del 500 (TLS Supabase), verificado con los contenedores en ejecución. Parte IV: frontend (sesión real, limpieza de landing y Panel de Admin con datos reales del sistema). Parte V: flujo "Restaurantes" del panel admin (imágenes 404, lógica de apertura/toggle, payload de edición, datos falsos y polling). Parte VI: flujo "Productos" del panel admin (imágenes con fallback/preview, select de categoría robusto; backend CRUD verificado). Parte VII: unificación de categorías (BD + catálogo único), borrado de restaurantes de prueba y estética mango en los formularios de producto. Parte VIII: flujo "Pedidos" del panel admin (bugs de className/Mango Engine/error muerto/mounted, + rediseño profesional con tarjetas resumen, método de pago y estado con color). Parte IX: métrica de ingresos coherente (excluye cancelados = S/732) y Sidebar del admin colapsable (menú hamburguesa con iconos, persistente y sin parpadeo).*

@@ -18,7 +18,7 @@ export function ToggleSwitch({ label, description, checked, onChange }: ToggleSw
         type="button"
         onClick={() => onChange(!checked)}
         className={`w-11 h-6 flex items-center rounded-full p-0.5 transition-colors duration-200 focus:outline-none ${
-          checked ? 'bg-[#22C55E]' : 'bg-gray-200'
+          checked ? 'bg-amber-500' : 'bg-gray-200'
         }`}
       >
         <div

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { Search, ChevronDown, ClipboardList, AlertCircle, Store, User } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Search, ChevronDown, ClipboardList, AlertCircle, Store, User, DollarSign, Clock, CheckCircle2, CreditCard, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
 import { Sidebar } from '../components/Sidebar';
+import { StatCard } from '../components/StatCard';
 import { getOrders, updateOrderStatus } from '@/app/services/order.service';
 
 interface OrderItem {
@@ -40,6 +41,13 @@ const STATUS_META: Record<string, { label: string; color: string; bg: string }> 
 
 const STATUS_LIST = ['PENDING', 'PREPARING', 'DELIVERING', 'DELIVERED', 'CANCELLED'];
 
+// Etiqueta + ícono del método de pago de cada orden.
+function paymentInfo(method: string) {
+  return method === 'CASH'
+    ? { label: 'Efectivo', Icon: Wallet }
+    : { label: 'Tarjeta', Icon: CreditCard };
+}
+
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('es-PE', {
     day: 'numeric',
@@ -50,7 +58,6 @@ function formatDate(dateStr: string) {
 }
 
 export default function AdminOrdersPage() {
-  const [mounted, setMounted] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -59,38 +66,46 @@ export default function AdminOrdersPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  // frontend/app/admin/orders/page.tsx
+  useEffect(() => {
+    let isInitial = true;
 
-useEffect(() => {
-  setMounted(true);
+    const loadData = async () => {
+      try {
+        const ordersData = await getOrders();
+        setOrders(Array.isArray(ordersData) ? ordersData : []);
+        setError(null);
+      } catch (err: any) {
+        console.error('Error cargando órdenes en el admin:', err);
+        // Solo mostramos error en la carga inicial; en el polling no interrumpimos la UX.
+        if (isInitial) setError(err.message || 'No se pudieron cargar los pedidos.');
+      } finally {
+        if (isInitial) {
+          setLoading(false);
+          isInitial = false;
+        }
+      }
+    };
 
-  // 🔄 Función aislada para poder llamarla repetidamente
-  const loadData = async () => {
-    try {
-      setError(null);
-      const ordersData = await getOrders();
-      setOrders(Array.isArray(ordersData) ? ordersData : []);
-    } catch (err: any) {
-      console.error("Error cargando órdenes en el admin:", err);
-      // No seteamos el error global en las re-peticiones para no interrumpir la UX del admin
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Carga inicial inmediata
-  loadData();
-
-  // 🕒 Polling activo: Consulta nuevas órdenes automáticamente cada 10 segundos
-  const interval = setInterval(() => {
     loadData();
-  }, 10000); 
 
-  return () => {
-    setMounted(false);
-    clearInterval(interval); // Limpiamos el timer al desmontar la página
-  };
-}, []);
+    // 🕒 Polling: refresca pedidos automáticamente cada 10 segundos.
+    const interval = setInterval(loadData, 10000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // 📊 Métricas resumidas (en vivo) para las tarjetas superiores.
+  const stats = useMemo(() => {
+    const revenue = orders
+      .filter((o) => o.status !== 'CANCELLED')
+      .reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+    return {
+      total: orders.length,
+      revenue,
+      pending: orders.filter((o) => o.status === 'PENDING').length,
+      delivered: orders.filter((o) => o.status === 'DELIVERED').length,
+    };
+  }, [orders]);
 
   const filtered = orders.filter((o) => {
     const term = search.toLowerCase();
@@ -122,8 +137,6 @@ useEffect(() => {
     }
   };
 
-  if (!mounted) return null;
-
   return (
     <div className="flex bg-[#f8fafc] min-h-screen w-full font-sans antialiased text-gray-900">
       <Sidebar />
@@ -132,9 +145,9 @@ useEffect(() => {
         {/* Cabecera */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Gestión de Pedidos</h1>
-            <p className="text-slate-500 text-sm mt-1 font-medium">
-              {orders.length} pedido{orders.length !== 1 ? 's' : ''} en total · <span className="text-amber-600 font-mono text-xs">Mango Engine v2.1</span>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight font-poppins">Gestión de Pedidos</h1>
+            <p className="text-slate-400 text-sm mt-1 font-medium">
+              Administra y actualiza el estado de los pedidos en tiempo real
             </p>
           </div>
 
@@ -149,6 +162,38 @@ useEffect(() => {
               className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10 transition-all shadow-xs"
             />
           </div>
+        </div>
+
+        {/* 📊 Tarjetas resumen en vivo */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+          <StatCard
+            label="Pedidos totales"
+            value={loading ? '—' : String(stats.total)}
+            icon={ClipboardList}
+            bgColor="bg-slate-100/60"
+            iconColor="text-slate-600"
+          />
+          <StatCard
+            label="Ingresos"
+            value={loading ? '—' : `S/ ${stats.revenue.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            icon={DollarSign}
+            bgColor="bg-amber-50/70"
+            iconColor="text-amber-600"
+          />
+          <StatCard
+            label="Pendientes"
+            value={loading ? '—' : String(stats.pending)}
+            icon={Clock}
+            bgColor="bg-orange-50/70"
+            iconColor="text-orange-600"
+          />
+          <StatCard
+            label="Entregados"
+            value={loading ? '—' : String(stats.delivered)}
+            icon={CheckCircle2}
+            bgColor="bg-green-50/70"
+            iconColor="text-green-600"
+          />
         </div>
 
         {/* Chips de filtro por estado */}
@@ -263,9 +308,17 @@ useEffect(() => {
                           
                           {/* Total */}
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex flex-col">
+                            <div className="flex flex-col gap-1">
                               <span className="text-sm font-extrabold text-slate-900">S/ {order.total.toFixed(2)}</span>
                               <span className="text-[10px] text-slate-400 font-medium">Envío: S/ {order.deliveryFee.toFixed(2)}</span>
+                              {(() => {
+                                const { label, Icon } = paymentInfo(order.paymentMethod);
+                                return (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-500 bg-slate-50 border border-slate-100 px-1.5 py-0.5 rounded-md w-fit">
+                                    <Icon size={10} /> {label}
+                                  </span>
+                                );
+                              })()}
                             </div>
                           </td>
 
@@ -282,13 +335,14 @@ useEffect(() => {
                           </td>
 
                           {/* Acción Desplegable */}
-                          <td className="px-6 py-4 指定-width-select whitespace-nowrap">
+                          <td className="px-6 py-4 whitespace-nowrap">
                             <div className="relative inline-block text-left">
                               <select
                                 value={order.status}
                                 onChange={(e) => handleStatusChange(order.id, e.target.value)}
                                 disabled={isFinal || updatingId === order.id}
-                                className="pl-3 pr-8 py-1.5 border border-slate-200 bg-white rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10 cursor-pointer appearance-none disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:bg-slate-50"
+                                style={{ color: meta.color }}
+                                className="pl-3 pr-8 py-1.5 border border-slate-200 bg-white rounded-xl text-xs font-bold focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10 cursor-pointer appearance-none disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:bg-slate-50"
                               >
                                 {STATUS_LIST.map((s) => (
                                   <option key={s} value={s}>
@@ -336,9 +390,19 @@ useEffect(() => {
                             ))}
                           </div>
                           
-                          <p className="text-xs font-black text-slate-900 pt-1">
-                            Total: S/ {order.total.toFixed(2)} <span className="text-[10px] font-normal text-slate-400">(Envío S/ {order.deliveryFee.toFixed(2)})</span>
-                          </p>
+                          <div className="flex items-center gap-2 pt-1">
+                            <p className="text-xs font-black text-slate-900">
+                              Total: S/ {order.total.toFixed(2)} <span className="text-[10px] font-normal text-slate-400">(Envío S/ {order.deliveryFee.toFixed(2)})</span>
+                            </p>
+                            {(() => {
+                              const { label, Icon } = paymentInfo(order.paymentMethod);
+                              return (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-500 bg-slate-50 border border-slate-100 px-1.5 py-0.5 rounded-md">
+                                  <Icon size={10} /> {label}
+                                </span>
+                              );
+                            })()}
+                          </div>
                         </div>
                         <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wide shrink-0" style={{ color: meta.color, background: meta.bg }}>
                           {meta.label}

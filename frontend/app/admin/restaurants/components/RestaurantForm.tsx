@@ -92,10 +92,21 @@ export function RestaurantForm() {
 
     setSaving(true);
 
+    // ⚠️ Payload explícito: en edición, 'form' venía de spread de la respuesta del GET e incluía
+    // 'id', 'createdAt' y el 'isOpen' YA CALCULADO. Enviarlos al PATCH ensuciaba el update de Prisma
+    // (intentaba escribir id/createdAt) y reescribía el flag manual con el valor calculado por hora.
+    // Solo mandamos los campos editables.
     const payload = {
-      ...form,
+      name: form.name,
+      description: form.description,
+      category: form.category,
+      address: form.address,
       deliveryTime: parseInt(form.deliveryTime) || 0,
       deliveryFee: parseFloat(form.deliveryFee) || 0.0,
+      isOpen: form.isOpen,
+      isFeatured: form.isFeatured,
+      image: form.image,
+      openingHours: form.openingHours,
     };
 
     try {

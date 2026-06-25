@@ -40,6 +40,9 @@ export function ProductCardAdmin({
           alt={product.name}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
           loading="lazy"
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80';
+          }}
         />
         
         {/* Etiqueta Popular (Gradiente Mango Oficial) */}

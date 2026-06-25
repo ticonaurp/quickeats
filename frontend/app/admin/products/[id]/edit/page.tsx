@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { Sidebar } from '../../../components/Sidebar';
 import { FormCard } from '@/app/admin/products/new/components/FormCard';
 import { ToggleSwitch } from '@/app/admin/products/new/components/ToggleSwitch';
+import { PRODUCT_CATEGORIES, PRODUCT_CATEGORY_VALUES } from '@/app/admin/products/categories';
 
 interface Restaurant {
   id: string;
@@ -151,7 +152,7 @@ export default function EditProductPage() {
 
         {/* Bloque del Título con Icono Circular Verde */}
         <div className="flex items-center gap-4 pt-1">
-          <div className="p-3 bg-[#22C55E] text-white rounded-2xl shadow-sm shadow-green-500/10">
+          <div className="p-3 bg-linear-to-br from-amber-500 to-orange-500 text-white rounded-2xl shadow-sm shadow-orange-500/10">
             <Package size={24} />
           </div>
           <div>
@@ -173,7 +174,7 @@ export default function EditProductPage() {
                 <select
                   value={restaurantId}
                   onChange={(e) => setRestaurantId(e.target.value)}
-                  className="w-full px-4 py-3 bg-white rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-green-500 transition-all appearance-none pr-10 text-gray-700"
+                  className="w-full px-4 py-3 bg-white rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-amber-500 transition-all appearance-none pr-10 text-gray-700"
                 >
                   <option value="">Selecciona un restaurante...</option>
                   {restaurants.map((r) => (
@@ -197,7 +198,7 @@ export default function EditProductPage() {
                 type="text" 
                 value={name} 
                 onChange={(e) => setName(e.target.value)} 
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-green-500 transition-all placeholder:text-gray-300" 
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-amber-500 transition-all placeholder:text-gray-300" 
                 placeholder="Ej. Lomo Saltado Clásico" 
               />
             </div>
@@ -207,7 +208,7 @@ export default function EditProductPage() {
               <textarea 
                 value={description} 
                 onChange={(e) => setDescription(e.target.value)} 
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-green-500 h-24 resize-none transition-all placeholder:text-gray-300" 
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-amber-500 h-24 resize-none transition-all placeholder:text-gray-300" 
                 placeholder="Describe el producto o sus ingredientes..." 
               />
             </div>
@@ -219,26 +220,17 @@ export default function EditProductPage() {
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    className="w-full px-4 py-3 bg-white rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-green-500 transition-all appearance-none pr-10 text-gray-700"
+                    className="w-full px-4 py-3 bg-white rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-amber-500 transition-all appearance-none pr-10 text-gray-700"
                   >
                     <option value="">Selecciona una categoría...</option>
-                    <option value="Burgers">Hamburguesas</option>
-                    <option value="Chicken">Pollo</option>
-                    <option value="Sides">Acompañamientos</option>
-                    <option value="Drinks">Bebidas</option>
-                    <option value="Ramen">Ramen</option>
-                    <option value="Pizza">Pizzas</option>
-                    <option value="Starters">Entradas</option>
-                    <option value="Desserts">Postres</option>
-                    <option value="Bowls">Bowls</option>
-                    <option value="Salads">Ensaladas</option>
-                    <option value="Pasta">Pastas</option>
-                    <option value="BBQ">BBQ</option>
-                    <option value="Tacos">Tacos</option>
-                    <option value="Burritos">Burritos</option>
-                    <option value="Rice Bowls">Bowls de Arroz</option>
-                    <option value="Grilled">A la Parrilla</option>
-                    <option value="Stews">Guisos</option>
+                    {/* Salvaguarda: si por dato legacy la categoría no está en el catálogo, la mostramos
+                        igual para que el producto no aparezca con categoría en blanco al editar. */}
+                    {category && !PRODUCT_CATEGORY_VALUES.includes(category) && (
+                      <option value={category}>{category} (actual)</option>
+                    )}
+                    {PRODUCT_CATEGORIES.map((c) => (
+                      <option key={c.value} value={c.value}>{c.label}</option>
+                    ))}
                   </select>
                   <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -254,7 +246,7 @@ export default function EditProductPage() {
                   type="number" 
                   value={calories} 
                   onChange={(e) => setCalories(e.target.value)} 
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-green-500 transition-all placeholder:text-gray-300" 
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-amber-500 transition-all placeholder:text-gray-300" 
                   placeholder="720" 
                 />
               </div>
@@ -270,7 +262,7 @@ export default function EditProductPage() {
                 step="0.01" 
                 value={price} 
                 onChange={(e) => setPrice(e.target.value)} 
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-green-500 transition-all placeholder:text-gray-300" 
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-amber-500 transition-all placeholder:text-gray-300" 
                 placeholder="S/ 24.90" 
               />
             </div>
@@ -280,14 +272,31 @@ export default function EditProductPage() {
           <FormCard title="Imagen del Producto" icon={<ImageIcon size={15} />}>
             <div>
               <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">URL de la Imagen *</label>
-              <input 
-                type="url" 
-                value={imageUrl} 
-                onChange={(e) => setImageUrl(e.target.value)} 
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-green-500 transition-all placeholder:text-gray-300" 
-                placeholder="https://..." 
+              <input
+                type="url"
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-amber-500 transition-all placeholder:text-gray-300"
+                placeholder="https://..."
               />
             </div>
+
+            {/* 📷 Previsualización en vivo de la imagen actual / editada */}
+            {imageUrl && (
+              <div>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1.5">Previsualización</p>
+                <div className="relative w-full max-w-sm h-40 rounded-xl overflow-hidden border border-gray-100 bg-gray-50">
+                  <img
+                    src={imageUrl}
+                    alt="Previsualización del producto"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80';
+                    }}
+                  />
+                </div>
+              </div>
+            )}
           </FormCard>
 
           {/* Card 5: Visibilidad */}
@@ -313,7 +322,7 @@ export default function EditProductPage() {
             <button 
               type="submit" 
               disabled={saving} 
-              className="flex items-center gap-2 bg-[#22C55E] hover:bg-green-600 text-white font-bold py-3 px-5 rounded-xl shadow-sm shadow-green-500/10 transition-all text-sm disabled:opacity-50"
+              className="flex items-center gap-2 bg-linear-to-r from-amber-500 to-orange-500 hover:opacity-95 text-white font-bold py-3 px-5 rounded-xl shadow-sm shadow-orange-500/10 transition-all text-sm disabled:opacity-50"
             >
               <Save size={16} />
               {saving ? 'Guardando...' : 'Guardar Cambios'}
