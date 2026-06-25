@@ -32,9 +32,13 @@ export class OrderService {
   }
 
   // 🔔 Avisa al notification-service que la orden se creó. No debe romper el flujo de creación si falla.
+  // En Docker se inyecta NOTIFICATION_SERVICE_URL (DNS del contenedor); en local cae a localhost.
+  private readonly notificationUrl =
+    process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3005';
+
   private async notifyOrderCreated(userId: string) {
     try {
-      await fetch('http://notification-service:3005/notifications', {
+      await fetch(`${this.notificationUrl}/notifications`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

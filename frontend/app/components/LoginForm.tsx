@@ -37,7 +37,12 @@ function LoginFields() {
         localStorage.setItem('isLoggedIn', 'true');
         localStorage.setItem('name', data.name || 'Usuario');
         localStorage.setItem('email', email); // Guardamos el email usado
-        localStorage.setItem('userId', data.userId || data.id || 'uid-mock-123'); // ID para el microservicio de órdenes
+        localStorage.setItem('userId', data.userId || data.id || 'uid-mock-123'); // ID real del usuario para el microservicio de órdenes
+
+        // 🔑 Guardamos el JWT que devuelve el backend para que fetchFromGateway lo envíe como Authorization: Bearer
+        if (data.access_token) {
+          localStorage.setItem('token', data.access_token);
+        }
         
         // Normalizamos el rol a mayúsculas para evitar fallos de formato
         const userRole = (data.role || 'USER').toUpperCase();

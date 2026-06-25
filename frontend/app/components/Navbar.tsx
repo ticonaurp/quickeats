@@ -28,8 +28,13 @@ export function Navbar() {
   }, []);
 
   const handleLogout = () => {
+    // Limpiamos TODAS las claves de sesión; antes quedaban 'email'/'isLoggedIn' y el usuario "seguía logueado".
     localStorage.removeItem('token');
     localStorage.removeItem('role');
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('email');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('name');
     setDropdownOpen(false);
     setUserEmail(null);
     router.push('/login');

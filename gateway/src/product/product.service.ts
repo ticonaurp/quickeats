@@ -6,8 +6,8 @@ import { firstValueFrom } from 'rxjs';
 export class ProductService {
   private readonly logger = new Logger(ProductService.name);
 
-  // 🟢 SOLUCIÓN DE ENTORNO: Lee la variable de Docker. Si falla, usa el DNS interno como respaldo.
-  private readonly baseUrl = `${process.env.RESTAURANT_SERVICE_URL || 'http://restaurant-service:3003'}/products`;
+  // 🟢 SOLUCIÓN DE ENTORNO: En Docker se inyecta RESTAURANT_SERVICE_URL; en local cae a localhost para resolver bien.
+  private readonly baseUrl = `${process.env.RESTAURANT_SERVICE_URL || 'http://localhost:3003'}/products`;
 
   constructor(private readonly httpService: HttpService) {}
 

@@ -19,12 +19,14 @@ export class AppService implements OnModuleInit, OnModuleDestroy {
     const localCertPath = path.join(process.cwd(), 'supabase-ca.crt');
     const certPath = fs.existsSync(containerCertPath) ? containerCertPath : localCertPath;
 
+    // ⚠️ El pooler de Supabase presenta un certificado self-signed en su cadena.
+    // Con sslmode=require basta CIFRAR la conexión sin validar la CA (evita P1011 TlsConnectionError).
     const sslConfig = fs.existsSync(certPath)
       ? {
-          rejectUnauthorized: true,
+          rejectUnauthorized: false,
           ca: fs.readFileSync(certPath, 'utf8'),
         }
-      : false;
+      : { rejectUnauthorized: false };
 
     // 3. Creamos un pool de conexiones nativo de PostgreSQL usando la URL y SSL
     this.pool = new Pool({ connectionString: dbUrl, ssl: sslConfig });

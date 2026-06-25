@@ -15,7 +15,9 @@ async function bootstrap() {
     }),
   );
 
-  await app.listen(3005);
-  console.log(' Notification Service running on port 3005');
+  // Respetamos el PORT que inyectan Render/Azure/Docker; en local cae a 3005.
+  const port = process.env.PORT ?? 3005;
+  await app.listen(port);
+  console.log(`Notification Service running on port ${port}`);
 }
 bootstrap();

@@ -14,7 +14,7 @@ export class AuthService {
 
     // Si por alguna razón no existiera, dejamos el fallback por defecto
 
-    private readonly authServiceUrl = process.env.AUTH_SERVICE_URL || 'http://auth-service:3002';
+    private readonly authServiceUrl = process.env.AUTH_SERVICE_URL || 'http://localhost:3002';
 
 
 

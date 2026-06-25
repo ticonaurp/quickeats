@@ -84,16 +84,6 @@ export default function Home() {
           
           {/* Bloque Izquierdo */}
           <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-50 border border-amber-100 shadow-xs">
-              <span className="flex h-2 w-2 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
-              </span>
-              <p className="text-xs font-bold text-amber-800 uppercase tracking-wider">
-                Mango Engine v2.1 — Todo Lima Metropolitana
-              </p>
-            </div>
-
             <h1 className="text-5xl sm:text-6xl md:text-7xl font-black text-slate-900 tracking-tighter leading-[0.95] font-poppins">
               La comida que quieres,{' '}
               <span className="bg-linear-to-r from-amber-500 via-orange-500 to-amber-600 bg-clip-text text-transparent">

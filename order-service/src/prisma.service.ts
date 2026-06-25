@@ -22,12 +22,14 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     const certPath = fs.existsSync(containerCertPath) ? containerCertPath : localCertPath;
 
     // Configuramos el objeto SSL para el Pool nativo de Node-Postgres
+    // ⚠️ El pooler de Supabase presenta un certificado self-signed en su cadena.
+    // Con sslmode=require basta CIFRAR la conexión sin validar la CA (evita P1011 TlsConnectionError).
     const sslConfig = fs.existsSync(certPath)
       ? {
-          rejectUnauthorized: true,
+          rejectUnauthorized: false,
           ca: fs.readFileSync(certPath, 'utf8'),
         }
-      : false;
+      : { rejectUnauthorized: false };
 
     const pool = new Pool({ 
       connectionString,

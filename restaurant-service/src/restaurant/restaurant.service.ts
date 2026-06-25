@@ -40,15 +40,6 @@ export class RestaurantService {
       return formatosHoy.includes(diaBDStr);
     });
 
-    // 🔍 LOG DE DIAGNÓSTICO LOCAL: Nos permite auditar la estructura real en la terminal
-    if (restaurant.openingHours && restaurant.openingHours.length > 0 && restaurant.name === "esquina de felipe") {
-      console.log(`⚙️ [DEBUG HORARIOS - ${restaurant.name}]:`, {
-        horaActualLima: ahora.toTimeString().slice(0, 5),
-        diaBuscado: formatosHoy,
-        horarioEncontrado: horarioHoy
-      });
-    }
-
     // Si no hay horarios para hoy, se considera cerrado
     if (!horarioHoy) return false; 
 

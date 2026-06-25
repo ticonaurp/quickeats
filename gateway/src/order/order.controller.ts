@@ -3,8 +3,8 @@ import { type Response } from 'express';
 
 @Controller('orders') // http://localhost:3001/orders
 export class OrderController {
-  // 🟢 Leemos la URL del .env. En Render viene seteada; en Docker local usamos el DNS del contenedor.
-  private readonly ORDER_SERVICE_URL = `${process.env.ORDER_SERVICE_URL || 'http://order-service:3004'}/orders`;
+  // 🟢 En Docker/Render se inyecta ORDER_SERVICE_URL; en local cae a localhost para resolver bien.
+  private readonly ORDER_SERVICE_URL = `${process.env.ORDER_SERVICE_URL || 'http://localhost:3004'}/orders`;
 
   @Post()
   async createOrder(@Body() body: any, @Res() res: Response) {

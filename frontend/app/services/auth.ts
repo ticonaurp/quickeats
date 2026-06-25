@@ -23,10 +23,12 @@ export function getUserId(): string | null {
   return localStorage.getItem('userId') || 'user-id-fallback';
 }
 
-// Devuelve el email del usuario autenticado
+// Devuelve el email del usuario autenticado SOLO si hay una sesión real iniciada.
+// Sin esto, el Navbar mostraba un usuario "fantasma" aunque nadie hubiera iniciado sesión.
 export function getUserEmail(): string | null {
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem('email') || 'usuario@quickeats.com';
+  if (localStorage.getItem('isLoggedIn') !== 'true') return null;
+  return localStorage.getItem('email');
 }
 
 // Extrae el rol normalizado en mayúsculas

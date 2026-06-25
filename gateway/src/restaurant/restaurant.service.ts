@@ -4,8 +4,9 @@ import { Injectable, Logger } from '@nestjs/common';
 export class RestaurantService {
   private readonly logger = new Logger(RestaurantService.name);
 
-  // 🌐 Leemos la variable del .env. Si no existe, usa el fallback dinámico de Docker
-  private readonly baseUrl = process.env.RESTAURANT_SERVICE_URL || 'http://restaurant-service:3003';
+  // 🌐 En Docker, docker-compose inyecta RESTAURANT_SERVICE_URL=http://restaurant-service:3003.
+  // En local (sin esa variable) usamos localhost para que el Gateway sí pueda resolver el microservicio.
+  private readonly baseUrl = process.env.RESTAURANT_SERVICE_URL || 'http://localhost:3003';
 
   async forwardRequest(path: string, method: string, body?: any) {
     // 🧹 Sanitizamos el path para asegurar que siempre empiece con '/' y no rompa la URL

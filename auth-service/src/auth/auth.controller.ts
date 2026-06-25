@@ -34,11 +34,15 @@ export class AuthController {
       maxAge: 15 * 60 * 1000, // Expira en 15 minutos exactos
     });
 
-    // Retornamos la data básica al frontend sin exponer el token crudo en la respuesta
+    // Mantenemos la cookie HttpOnly como defensa adicional, pero también devolvemos el token y el userId
+    // en el cuerpo porque el Set-Cookie no sobrevive al reenvío del Gateway (Axios no propaga cookies).
+    // El frontend guarda el token y lo manda como Authorization: Bearer en las siguientes peticiones.
     return {
       message: result.message,
       name: result.name,
       role: result.role,
+      userId: result.userId,
+      access_token: result.access_token,
     };
   }
 
