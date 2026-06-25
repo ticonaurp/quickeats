@@ -45,8 +45,6 @@ services:
       - ./auth-service/.env
     environment:
       - TZ=America/Lima
-      - PGSSLMODE=verify-full
-      - PGSSLROOTCERT=/app/supabase-ca.crt
     volumes:
       - ./auth-service:/app:z 
       - /app/node_modules
@@ -68,8 +66,6 @@ services:
       - ./restaurant-service/.env
     environment:
       - TZ=America/Lima
-      - PGSSLMODE=verify-full
-      - PGSSLROOTCERT=/app/supabase-ca.crt
     volumes:
       - ./restaurant-service:/app:z
       - /app/node_modules
@@ -91,8 +87,8 @@ services:
       - ./order-service/.env
     environment:
       - TZ=America/Lima
-      - PGSSLMODE=verify-full
-      - PGSSLROOTCERT=/app/supabase-ca.crt
+      # En Docker el order-service alcanza al notification-service por su DNS interno
+      - NOTIFICATION_SERVICE_URL=http://notification-service:3005
     volumes:
       - ./order-service:/app:z 
       - /app/node_modules
@@ -114,8 +110,6 @@ services:
       - ./notification-service/.env
     environment:
       - TZ=America/Lima
-      - PGSSLMODE=verify-full
-      - PGSSLROOTCERT=/app/supabase-ca.crt
     volumes:
       - ./notification-service:/app:z
       - /app/node_modules

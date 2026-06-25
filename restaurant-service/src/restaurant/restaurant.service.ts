@@ -30,6 +30,13 @@ export class RestaurantService {
 
     const formatosHoy = dicDias[diaActual] || [];
 
+    // 🆕 Si el restaurante NO tiene ningún horario configurado, NO lo dejamos cerrado para siempre:
+    // respetamos el switch manual 'isOpen'. Así el toggle del panel admin tiene efecto real.
+    // (Los restaurantes que SÍ tienen horarios siguen rigiéndose por la hora.)
+    if (!restaurant.openingHours || restaurant.openingHours.length === 0) {
+      return restaurant.isOpen ?? true;
+    }
+
     // 3. Buscar el horario de hoy en la relación de Prisma
     const horarioHoy = restaurant.openingHours?.find((h: any) => {
       const campoDia = h.dayOfWeek ?? h.day ?? h.dia;
@@ -39,15 +46,6 @@ export class RestaurantService {
       const diaBDStr = String(campoDia).toUpperCase().trim();
       return formatosHoy.includes(diaBDStr);
     });
-
-    // 🔍 LOG DE DIAGNÓSTICO LOCAL: Nos permite auditar la estructura real en la terminal
-    if (restaurant.openingHours && restaurant.openingHours.length > 0 && restaurant.name === "esquina de felipe") {
-      console.log(`⚙️ [DEBUG HORARIOS - ${restaurant.name}]:`, {
-        horaActualLima: ahora.toTimeString().slice(0, 5),
-        diaBuscado: formatosHoy,
-        horarioEncontrado: horarioHoy
-      });
-    }
 
     // Si no hay horarios para hoy, se considera cerrado
     if (!horarioHoy) return false; 

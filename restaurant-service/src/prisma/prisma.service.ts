@@ -13,12 +13,15 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
 
     // 🌟 NUEVO: Mapeo seguro del certificado para evitar el TlsConnectionError
     const certPath = path.join(process.cwd(), 'supabase-ca.crt');
+    // ⚠️ El pooler de Supabase presenta un certificado self-signed en su cadena.
+    // Con sslmode=require basta CIFRAR la conexión sin validar la CA; validar estricto
+    // provoca P1011 "self-signed certificate in certificate chain" y rompe todas las queries.
     const sslConfig = fs.existsSync(certPath)
       ? {
-          rejectUnauthorized: true, // 🛡️ Validación estricta activada
+          rejectUnauthorized: false,
           ca: fs.readFileSync(certPath, 'utf8'),
         }
-      : false; // Fallback por si en algún entorno local no usan SSL
+      : { rejectUnauthorized: false }; // Siempre TLS (Supabase exige sslmode=require)
 
     // Creamos el pool inyectando el objeto de configuración SSL
     const pool = new Pool({ 

@@ -41,7 +41,14 @@ export function RestaurantTable({ data, onToggleOpen }: RestaurantTableProps) {
               {/* 1. RESTAURANTE */}
               <td className="px-6 py-4">
                 <div className="flex items-center gap-3">
-                  <img src={r.image} alt={r.name} className="w-10 h-10 rounded-xl object-cover shrink-0 border border-gray-100" />
+                  <img
+                    src={r.image}
+                    alt={r.name}
+                    className="w-10 h-10 rounded-xl object-cover shrink-0 border border-gray-100"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=200&q=80';
+                    }}
+                  />
                   <div className="min-w-0">
                     <p className="font-bold text-gray-900 text-sm truncate">{r.name}</p>
                     <p className="text-xs text-gray-400 truncate max-w-xs mt-0.5">{r.address}</p>

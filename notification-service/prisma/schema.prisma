@@ -1,14 +1,19 @@
 datasource db {
   provider = "postgresql"
+  schemas  = ["notification_service"]
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
 }
 
 model Notification {
   id        String   @id @default(uuid())
   userId    String
   message   String
+  isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
+
+  @@schema("notification_service")
 }

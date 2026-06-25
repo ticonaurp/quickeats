@@ -9,7 +9,7 @@ export class OrderService {
   async create(createOrderDto: CreateOrderDto) {
     const { items, ...orderData } = createOrderDto;
 
-    return this.prisma.order.create({
+    const order = await this.prisma.order.create({
       data: {
         ...orderData,
         items: {
@@ -25,6 +25,30 @@ export class OrderService {
         items: true,
       },
     });
+
+    await this.notifyOrderCreated(order.userId);
+
+    return order;
+  }
+
+  // 🔔 Avisa al notification-service que la orden se creó. No debe romper el flujo de creación si falla.
+  // En Docker se inyecta NOTIFICATION_SERVICE_URL (DNS del contenedor); en local cae a localhost.
+  private readonly notificationUrl =
+    process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3005';
+
+  private async notifyOrderCreated(userId: string) {
+    try {
+      await fetch(`${this.notificationUrl}/notifications`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          message: 'Tu orden ha sido creada exitosamente',
+        }),
+      });
+    } catch (error) {
+      console.error('No se pudo notificar la creación de la orden:', error);
+    }
   }
 
   async findAll() {

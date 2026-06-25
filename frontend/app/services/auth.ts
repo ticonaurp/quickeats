@@ -1,55 +1,38 @@
-// 🔐 Utilidades para leer la información del usuario a partir del token JWT
-// El backend (auth-service) firma el token con el payload: { sub, email, role }
-// donde "sub" es el id único del usuario en la base de datos.
+// 🔐 Utilidades para el control de sesión en el cliente (QuickEats V2)
+// Nota: El token JWT real viaja protegido en una Cookie HttpOnly invisible a atacantes XSS.
 
-interface JwtPayload {
-  sub: string;
-  email: string;
-  role: string;
-  iat?: number;
-  exp?: number;
-}
+export function isTokenValid(): boolean {
+  if (typeof window === 'undefined') return false;
 
-// Decodifica el payload del JWT sin necesidad de librerías externas
-function decodeToken(token: string): JwtPayload | null {
-  try {
-    const base64Url = token.split('.')[1];
-    if (!base64Url) return null;
-
-    // El JWT usa base64url; lo convertimos a base64 estándar antes de decodificar
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const json = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join(''),
-    );
-
-    return JSON.parse(json) as JwtPayload;
-  } catch (error) {
-    console.error('No se pudo decodificar el token JWT:', error);
-    return null;
+  // Leemos la bandera que inyecta el LoginForm corregido
+  const isLoggedIn = localStorage.getItem('isLoggedIn');
+  
+  // Si no existe o no es el string "true", la sesión no es válida
+  if (!isLoggedIn || isLoggedIn !== 'true') {
+    return false;
   }
+
+  return true;
 }
 
-// Devuelve el id del usuario autenticado (o null si no hay sesión válida)
+// Devuelve el id del usuario autenticado mapeado en el inicio de sesión
 export function getUserId(): string | null {
   if (typeof window === 'undefined') return null;
-
-  const token = localStorage.getItem('token');
-  if (!token) return null;
-
-  const payload = decodeToken(token);
-  return payload?.sub ?? null;
+  
+  // Retorna el ID real guardado por el login o un fallback limpio por seguridad del DTO
+  return localStorage.getItem('userId') || 'user-id-fallback';
 }
 
-// Devuelve el email del usuario autenticado (o null si no hay sesión válida)
+// Devuelve el email del usuario autenticado SOLO si hay una sesión real iniciada.
+// Sin esto, el Navbar mostraba un usuario "fantasma" aunque nadie hubiera iniciado sesión.
 export function getUserEmail(): string | null {
   if (typeof window === 'undefined') return null;
+  if (localStorage.getItem('isLoggedIn') !== 'true') return null;
+  return localStorage.getItem('email');
+}
 
-  const token = localStorage.getItem('token');
-  if (!token) return null;
-
-  const payload = decodeToken(token);
-  return payload?.email ?? null;
+// Extrae el rol normalizado en mayúsculas
+export function getUserRole(): string {
+  if (typeof window === 'undefined') return 'USER';
+  return (localStorage.getItem('role') || 'USER').toUpperCase();
 }

@@ -1,13 +1,12 @@
 "use client";
 
 import { useRouter } from 'next/navigation';
-import { Star, Edit2 } from 'lucide-react';
+import { Edit2 } from 'lucide-react';
 
 interface Restaurant {
   id: string;
   name: string;
   category: string;
-  rating: number;
   deliveryFee: number;
   isOpen: boolean;
   image: string;
@@ -25,15 +24,18 @@ export function RestaurantMobileList({ data, onToggleOpen }: RestaurantMobileLis
     <div className="md:hidden divide-y divide-gray-100">
       {data.map(r => (
         <div key={r.id} className="p-4 flex items-center gap-3 bg-white hover:bg-gray-50/50 transition-colors">
-          <img src={r.image} alt={r.name} className="w-12 h-12 rounded-xl object-cover shrink-0 border border-gray-100" />
+          <img
+            src={r.image}
+            alt={r.name}
+            className="w-12 h-12 rounded-xl object-cover shrink-0 border border-gray-100"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=200&q=80';
+            }}
+          />
           <div className="flex-1 min-w-0">
             <p className="font-bold text-gray-900 text-sm truncate">{r.name}</p>
             <div className="flex items-center gap-2 mt-1">
               <span className="text-xs font-medium text-gray-400">{r.category}</span>
-              <span className="text-xs text-gray-300">·</span>
-              <span className="flex items-center gap-0.5 text-xs font-bold text-amber-500">
-                <Star size={11} className="fill-current" />{r.rating}
-              </span>
             </div>
             <div className="flex items-center gap-3 mt-1.5">
               <button onClick={() => onToggleOpen(r.id)} className="text-left">

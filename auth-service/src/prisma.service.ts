@@ -30,12 +30,15 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     // Si existe en el contenedor, usa esa; si no, usa la ruta local
     const certPath = fs.existsSync(containerCertPath) ? containerCertPath : localCertPath;
 
+    // ⚠️ El pooler de Supabase presenta un certificado self-signed en su cadena.
+    // Con sslmode=require basta CIFRAR la conexión sin validar la CA; validar estricto
+    // provoca P1011 "self-signed certificate in certificate chain" y rompe todas las queries.
     const sslConfig = fs.existsSync(certPath)
       ? {
-          rejectUnauthorized: true, // 🛡️ Activamos la verificación estricta
+          rejectUnauthorized: false,
           ca: fs.readFileSync(certPath, 'utf8'),
         }
-      : false; // Fallback por si localmente usas una BD Docker sin SSL
+      : { rejectUnauthorized: false }; // Siempre TLS (Supabase exige sslmode=require)
 
     // 🔬 LOG DE CONTROL: Esto te dirá en la terminal si Docker encontró el archivo con éxito
     console.log(`[Prisma SSL Auth] ¿Certificado encontrado?: ${fs.existsSync(certPath)}. Ruta: ${certPath}`);

@@ -30,41 +30,41 @@ export default function LoginPage() {
 
       <main className="flex min-h-[calc(100vh-4rem)] relative">
         {/* === PANEL IZQUIERDO - VERSIÓN LIGHT MANGO === */}
-        <div className="hidden lg:flex lg:w-5/12 xl:w-1/2 bg-slate-100/60 relative overflow-hidden items-center justify-center border-r border-slate-200">
-          
+        <div className="hidden lg:flex lg:w-5/12 xl:w-1/2 bg-slate-900 relative overflow-hidden items-center justify-center border-r border-slate-800">
+
           {/* Sutil resplandor de fondo color mango (muy suave) */}
-          <div className="absolute inset-0 bg-[radial-gradient(at_30%_30%,rgba(245,158,11,0.05)_0%,transparent_60%)]" />
-          
-          <div className="relative w-full -rotate-[4deg] scale-[1.12] flex flex-col gap-5">
-            
+          <div className="absolute inset-0 bg-[radial-gradient(at_30%_30%,rgba(245,158,11,0.1)_0%,transparent_60%)]" />
+
+          <div className="relative w-full rotate-[-4deg] scale-[1.12] flex flex-col gap-5">
+
             {/* Fila 1 - Comidas en Gris Tenue */}
             <div className="overflow-hidden whitespace-nowrap flex min-w-full">
-              <div className="animate-wave-fast flex shrink-0 text-5xl xl:text-6xl font-black tracking-[-2px] text-slate-300 uppercase select-none">
+              <div className="animate-wave-fast flex shrink-0 text-5xl xl:text-6xl font-black tracking-[-2px] text-slate-700 uppercase select-none">
                 BURGER • CEVICHE • PIZZA • LOMO • SUSHI • TACOS • MAKI • POLLO • CHIFA •&nbsp;
               </div>
-              <div className="animate-wave-fast flex shrink-0 text-5xl xl:text-6xl font-black tracking-[-2px] text-slate-300 uppercase select-none">
+              <div className="animate-wave-fast flex shrink-0 text-5xl xl:text-6xl font-black tracking-[-2px] text-slate-700 uppercase select-none">
                 BURGER • CEVICHE • PIZZA • LOMO • SUSHI • TACOS • MAKI • POLLO • CHIFA •&nbsp;
               </div>
             </div>
 
             {/* Fila 2 - Marca con Gradiente Mango Enérgico */}
-            <div className="overflow-hidden whitespace-nowrap flex min-w-full py-3 bg-amber-500/[0.05] border-y border-amber-500/10">
-              <div className="animate-wave-reverse flex shrink-0 text-7xl xl:text-8xl font-black tracking-[-3px] bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 bg-clip-text text-transparent uppercase select-none">
+            <div className="overflow-hidden whitespace-nowrap flex min-w-full py-3 bg-amber-500/5 border-y border-amber-500/10">
+              <div className="animate-wave-reverse flex shrink-0 text-7xl xl:text-8xl font-black tracking-[-3px] bg-linear-to-r from-amber-500 via-orange-500 to-amber-600 bg-clip-text text-transparent uppercase select-none">
                 QUICKEATS • LIVE • SPEED • PREMIUM •&nbsp;
               </div>
-              <div className="animate-wave-reverse flex shrink-0 text-7xl xl:text-8xl font-black tracking-[-3px] bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 bg-clip-text text-transparent uppercase select-none">
+              <div className="animate-wave-reverse flex shrink-0 text-7xl xl:text-8xl font-black tracking-[-3px] bg-linear-to-r from-amber-500 via-orange-500 to-amber-600 bg-clip-text text-transparent uppercase select-none">
                 QUICKEATS • LIVE • SPEED • PREMIUM •&nbsp;
               </div>
             </div>
 
             {/* Fila 3 - Outline Mango Sutil */}
             <div className="overflow-hidden whitespace-nowrap flex min-w-full">
-              <div className="animate-wave-slow flex shrink-0 text-6xl xl:text-7xl font-black tracking-[-2px] text-transparent uppercase select-none" 
-                   style={{ WebkitTextStroke: '1.5px rgba(245, 158, 11, 0.25)' }}>
+              <div className="animate-wave-slow flex shrink-0 text-6xl xl:text-7xl font-black tracking-[-2px] text-transparent uppercase select-none"
+                   style={{ WebkitTextStroke: '1.5px rgba(245, 158, 11, 0.35)' }}>
                 DELIVERY • INSTANT • CLOUD • NEXT • NEST • PRISMA •&nbsp;
               </div>
-              <div className="animate-wave-slow flex shrink-0 text-6xl xl:text-7xl font-black tracking-[-2px] text-transparent uppercase select-none" 
-                   style={{ WebkitTextStroke: '1.5px rgba(245, 158, 11, 0.25)' }}>
+              <div className="animate-wave-slow flex shrink-0 text-6xl xl:text-7xl font-black tracking-[-2px] text-transparent uppercase select-none"
+                   style={{ WebkitTextStroke: '1.5px rgba(245, 158, 11, 0.35)' }}>
                 DELIVERY • INSTANT • CLOUD • NEXT • NEST • PRISMA •&nbsp;
               </div>
             </div>
@@ -73,7 +73,7 @@ export default function LoginPage() {
           {/* Branding inferior adaptado */}
           <div className="absolute bottom-10 left-10 flex items-center gap-2.5">
             <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-            <span className="text-slate-400 text-xs font-mono tracking-[1.5px]">UI V2.1 – MANGO ENGINE</span>
+            <span className="text-slate-500 text-xs font-mono tracking-[1.5px]">UI V2.1 – MANGO ENGINE</span>
           </div>
         </div>
 
