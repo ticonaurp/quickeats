@@ -92,7 +92,7 @@ export default function Home() {
             </h1>
 
             <p className="text-lg md:text-xl text-slate-500 font-medium max-w-xl mx-auto lg:mx-0 leading-relaxed">
-              Explora los mejores restaurantes de tu zona. Pide al instante con tracking hiperpreciso en vivo. Tu mesa lista en 30 minutos o es gratis.
+              Pide a los restaurantes de tu zona y recíbelo en casa. Sigue tu pedido en tiempo real, desde el local hasta tu puerta.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-2">
@@ -111,22 +111,6 @@ export default function Home() {
               </Link>
             </div>
 
-            <div className="flex items-center gap-6 sm:gap-10 pt-6 justify-center lg:justify-start">
-              <div className="text-center lg:text-left">
-                <p className="text-2xl font-black text-slate-900 font-poppins">500+</p>
-                <p className="text-xs text-slate-500 font-semibold">Restaurantes</p>
-              </div>
-              <div className="w-px h-10 bg-slate-200" aria-hidden="true" />
-              <div className="text-center lg:text-left">
-                <p className="text-2xl font-black text-slate-900 font-poppins">&lt;24 min</p>
-                <p className="text-xs text-slate-500 font-semibold">Entrega promedio</p>
-              </div>
-              <div className="w-px h-10 bg-slate-200" aria-hidden="true" />
-              <div className="text-center lg:text-left">
-                <p className="text-2xl font-black text-slate-900 font-poppins">4.8</p>
-                <p className="text-xs text-slate-500 font-semibold">Calificación promedio</p>
-              </div>
-            </div>
           </div>
 
           {/* Bloque Derecho: Mockup adaptado */}
@@ -203,8 +187,8 @@ export default function Home() {
       <section className="py-24 bg-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="text-center max-w-xl mx-auto mb-16">
-            <h2 className="text-4xl font-black text-slate-900 mb-3 font-poppins tracking-tight">Redefiniendo el Delivery</h2>
-            <p className="text-slate-500 font-medium text-base">Adiós a las esperas eternas y pedidos fríos. Bienvenido a la era hiperconectada.</p>
+            <h2 className="text-4xl font-black text-slate-900 mb-3 font-poppins tracking-tight">¿Por qué QuickEats?</h2>
+            <p className="text-slate-500 font-medium text-base">Comida de tus restaurantes favoritos: rápida, fácil y con seguimiento en vivo.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[220px]">
@@ -218,11 +202,11 @@ export default function Home() {
               </div>
               <div>
                 <span className="text-amber-400 font-black text-5xl tracking-tight sm:text-6xl block mb-2 font-poppins">
-                  &lt; 24 min
+                  30 min
                 </span>
-                <h3 className="text-xl font-bold mb-2 font-poppins">Velocidad de entrega algorítmica</h3>
+                <h3 className="text-xl font-bold mb-2 font-poppins">Entrega rápida y seguimiento en vivo</h3>
                 <p className="text-slate-400 text-sm max-w-md font-medium leading-relaxed">
-                  Nuestro sistema inteligente asigna automáticamente las órdenes al repartidor ideal según proximidad, optimizando rutas para que tu comida llegue crujiente.
+                  Tu pedido se asigna al repartidor más cercano y puedes seguirlo en el mapa en tiempo real, desde el restaurante hasta tu puerta.
                 </p>
               </div>
             </div>
@@ -233,8 +217,8 @@ export default function Home() {
                 <Shield size={20} />
               </div>
               <div>
-                <h3 className="font-extrabold text-slate-900 text-lg mb-1 font-poppins tracking-tight">Locales 100% Verificados</h3>
-                <p className="text-slate-500 text-xs font-medium leading-relaxed">Cada restaurante pasa por auditorías de calidad rigurosas antes de aparecer en tu pantalla.</p>
+                <h3 className="font-extrabold text-slate-900 text-lg mb-1 font-poppins tracking-tight">Restaurantes de tu zona</h3>
+                <p className="text-slate-500 text-xs font-medium leading-relaxed">Trabajamos con locales reales, con sus menús y precios siempre actualizados.</p>
               </div>
             </div>
 
@@ -244,8 +228,8 @@ export default function Home() {
                 <Smartphone size={20} />
               </div>
               <div>
-                <h3 className="font-extrabold text-slate-900 text-lg mb-1 font-poppins tracking-tight">Garantía QuickEats</h3>
-                <p className="text-slate-500 text-xs font-medium leading-relaxed">¿Hubo algún inconveniente? Te devolvemos tu dinero o gestionamos un cambio en minutos.</p>
+                <h3 className="font-extrabold text-slate-900 text-lg mb-1 font-poppins tracking-tight">Soporte cuando lo necesites</h3>
+                <p className="text-slate-500 text-xs font-medium leading-relaxed">¿Algún problema con tu pedido? Escríbenos y te ayudamos a resolverlo rápido.</p>
               </div>
             </div>
           </div>
@@ -284,12 +268,12 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-12 gap-4">
             <div>
-              <h2 className="text-4xl font-black text-slate-900 font-poppins tracking-tight">Joyas Gastronómicas</h2>
-              <p className="text-slate-500 mt-1 font-medium text-sm">Lo más pedido, mejor calificado y amado por la comunidad de Lima.</p>
+              <h2 className="text-4xl font-black text-slate-900 font-poppins tracking-tight">Algunos de nuestros restaurantes</h2>
+              <p className="text-slate-500 mt-1 font-medium text-sm">Crea tu cuenta gratis para ver los menús completos y hacer tu pedido.</p>
             </div>
             <div className="h-px bg-slate-200 flex-1 hidden sm:block mx-8 mb-3" />
             <Link
-              href="/restaurants"
+              href="/register"
               className="group inline-flex items-center gap-2 text-sm font-bold text-amber-600 hover:text-amber-700 transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 rounded-lg"
             >
               Ver todos
@@ -325,7 +309,7 @@ export default function Home() {
 
                 return (
                   <Link
-                    href={`/restaurants/${restaurant.id}`}
+                    href="/register"
                     key={restaurant.id}
                     className={`bg-white rounded-4xl overflow-hidden border border-slate-100 flex flex-col justify-between group relative transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-slate-200/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 ${
                       !isCurrentlyOpen ? 'opacity-65 saturate-50' : ''
@@ -420,7 +404,7 @@ export default function Home() {
       {/* FOOTER */}
       <footer className="bg-slate-950 text-slate-600 py-12 border-t border-slate-900">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm font-medium">
-          <p>© 2026 QuickEats. Desarrollado con Next.js & NestJS.</p>
+          <p>© 2026 QuickEats. Tu delivery favorito en Lima.</p>
           <p className="text-xs text-slate-700">Lima, Perú.</p>
         </div>
       </footer>

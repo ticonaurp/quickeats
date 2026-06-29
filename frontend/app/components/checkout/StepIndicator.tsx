@@ -16,7 +16,7 @@ export default function StepIndicator({ step }: StepIndicatorProps) {
           <div 
             className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${
               step === s 
-                ? 'bg-[#22C55E] text-white' 
+                ? 'bg-[#F97316] text-white' 
                 : STEPS.indexOf(step) > i 
                 ? 'bg-gray-100 text-gray-500' 
                 : 'bg-gray-100 text-gray-400'
@@ -27,7 +27,7 @@ export default function StepIndicator({ step }: StepIndicatorProps) {
             {s === 'address' ? 'Dirección de Entrega' : 'Pago'}
           </div>
           {i < STEPS.length - 1 && (
-            <div className={`flex-1 h-0.5 ${STEPS.indexOf(step) > i ? 'bg-[#22C55E]' : 'bg-gray-200'}`} style={{ minWidth: '2rem' }} />
+            <div className={`flex-1 h-0.5 ${STEPS.indexOf(step) > i ? 'bg-[#F97316]' : 'bg-gray-200'}`} style={{ minWidth: '2rem' }} />
           )}
         </div>
       ))}

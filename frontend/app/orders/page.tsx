@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Search as SearchIcon, ChevronDown, ChevronUp, ClipboardList, AlertCircle, Bike, CheckCircle, XCircle, ArrowRight, Calendar, UtensilsCrossed, MapPin, ReceiptText, ChefHat, Check } from 'lucide-react';
 import Link from 'next/link';
 import { getUserId } from '@/app/services/auth';
+import TopNavbar from '../components/TopNavbar';
 
 interface OrderItem {
   id: string;
@@ -94,7 +95,7 @@ function OrderCard({ order }: { order: Order }) {
             {meta.icon}
             <span className="hidden sm:inline">{meta.label}</span>
           </div>
-          <span className="text-green-600 font-black text-base font-mono">
+          <span className="text-amber-600 font-black text-base font-mono">
             S/. {order.total.toFixed(2)}
           </span>
           {isExpanded ? <ChevronUp size={18} className="text-slate-400" /> : <ChevronDown size={18} className="text-slate-400" />}
@@ -246,33 +247,40 @@ export default function OrdersHistoryScreen() {
 
   if (loading) {
     return (
-      <div className="max-w-3xl mx-auto px-4 py-12 space-y-4">
-        <div className="h-8 bg-slate-200 rounded-xl w-48 animate-pulse mb-4" />
-        {[1, 2, 3].map((n) => (
-          <div key={n} className="bg-white rounded-2xl h-16 border border-slate-100 animate-pulse" />
-        ))}
+      <div className="bg-[#f8fafc] min-h-screen w-full font-sans antialiased text-gray-900">
+        <TopNavbar />
+        <div className="max-w-3xl mx-auto px-4 py-12 space-y-4">
+          <div className="h-8 bg-slate-200 rounded-xl w-48 animate-pulse mb-4" />
+          {[1, 2, 3].map((n) => (
+            <div key={n} className="bg-white rounded-2xl h-16 border border-slate-100 animate-pulse" />
+          ))}
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="max-w-md mx-auto my-16 p-8 bg-white rounded-4xl border border-slate-100 text-center space-y-4 shadow-xs">
-        <div className="w-12 h-12 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto">
-          <AlertCircle size={24} />
+      <div className="bg-[#f8fafc] min-h-screen w-full font-sans antialiased text-gray-900">
+        <TopNavbar />
+        <div className="max-w-md mx-auto my-16 p-8 bg-white rounded-4xl border border-slate-100 text-center space-y-4 shadow-xs">
+          <div className="w-12 h-12 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto">
+            <AlertCircle size={24} />
+          </div>
+          <h3 className="font-black text-xl text-slate-900">Error de Carga</h3>
+          <p className="text-slate-400 text-sm font-medium">{error}</p>
+          <Link href="/login" className="inline-block px-6 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold shadow-md hover:bg-slate-800 transition-all">
+            Reingresar a mi cuenta
+          </Link>
         </div>
-        <h3 className="font-black text-xl text-slate-900">Error de Carga</h3>
-        <p className="text-slate-400 text-sm font-medium">{error}</p>
-        <Link href="/login" className="inline-block px-6 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold shadow-md hover:bg-slate-800 transition-all">
-          Reingresar a mi cuenta
-        </Link>
       </div>
     );
   }
 
   return (
-    <div className="bg-[#f8fafc] min-h-screen w-full py-12 font-sans antialiased text-gray-900">
-      <div className="max-w-3xl mx-auto px-4 space-y-6">
+    <div className="bg-[#f8fafc] min-h-screen w-full font-sans antialiased text-gray-900">
+      <TopNavbar />
+      <div className="max-w-3xl mx-auto px-4 py-12 space-y-6">
         
         {/* Cabecera */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -334,7 +342,7 @@ export default function OrdersHistoryScreen() {
         {/* Lista de Pedidos */}
         {orders.length === 0 ? (
           <div className="bg-white rounded-4xl border border-slate-100 p-12 text-center max-w-sm mx-auto shadow-xs space-y-4">
-            <div className="w-14 h-14 bg-emerald-50 rounded-full flex items-center justify-center mx-auto text-emerald-500">
+            <div className="w-14 h-14 bg-amber-50 rounded-full flex items-center justify-center mx-auto text-amber-500">
               <UtensilsCrossed size={24} />
             </div>
             <div>
@@ -343,7 +351,7 @@ export default function OrdersHistoryScreen() {
             </div>
             <Link
               href="/user"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-green-500 text-white font-bold text-sm rounded-xl hover:bg-green-600 transition-all"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-amber-500 text-white font-bold text-sm rounded-xl hover:bg-amber-600 transition-all"
             >
               Ver Restaurantes <ArrowRight size={14} />
             </Link>

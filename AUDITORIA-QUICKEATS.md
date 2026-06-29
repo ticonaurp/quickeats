@@ -491,4 +491,221 @@ La acción clave (cambiar el estado de un pedido) funciona de punta a punta vía
 
 ---
 
-*Parte I: auditoría de solo lectura. Parte II: correcciones de integración sobre archivos fuente. Parte III: diagnóstico en runtime sobre Docker y fix definitivo del 500 (TLS Supabase), verificado con los contenedores en ejecución. Parte IV: frontend (sesión real, limpieza de landing y Panel de Admin con datos reales del sistema). Parte V: flujo "Restaurantes" del panel admin (imágenes 404, lógica de apertura/toggle, payload de edición, datos falsos y polling). Parte VI: flujo "Productos" del panel admin (imágenes con fallback/preview, select de categoría robusto; backend CRUD verificado). Parte VII: unificación de categorías (BD + catálogo único), borrado de restaurantes de prueba y estética mango en los formularios de producto. Parte VIII: flujo "Pedidos" del panel admin (bugs de className/Mango Engine/error muerto/mounted, + rediseño profesional con tarjetas resumen, método de pago y estado con color). Parte IX: métrica de ingresos coherente (excluye cancelados = S/732) y Sidebar del admin colapsable (menú hamburguesa con iconos, persistente y sin parpadeo).*
+---
+
+# PARTE X — Flujo de pedido del CLIENTE (2026-06-29)
+
+> Rama: `feature/ajustes-clientes`. Se auditó y corrigió el recorrido completo del cliente: `/user` (catálogo) → detalle de restaurante → carrito → pago → `Mis Pedidos`.
+
+## A. 🐞 `/user`: restaurantes en blanco hasta recargar
+**Síntoma:** al entrar a `/user` los locales aparecían en blanco (estado de carga) y solo se mostraban al **recargar** la página.
+**Causa:** el `useEffect` de carga usaba un guard `isFetchingRef`. Con el **doble montaje de React StrictMode en dev**, el primer montaje arrancaba el fetch y marcaba `isFetchingRef=true`; al desmontarse (`isMounted=false`) su resultado se descartaba; y el segundo montaje (el real) se salía por el guard (`isFetchingRef` seguía `true`) → nunca se poblaban los datos ni se quitaba el `loading`.
+**Fix (`frontend/app/user/page.tsx`):** se reescribió el efecto sin el ref-guard, usando una bandera `active` local y `setInterval` para el polling. Ahora el segundo montaje sí carga y siempre se hace `setLoading(false)`. (Se eliminaron también los imports muertos `useRef` y `Sparkles`.)
+
+## B. 🧹 `/user`: badge de universidad eliminado
+Se quitó el badge **"Universidad Ricardo Palma"** que aparecía sobre el título *"¿Qué te provoca pedir hoy?"* (texto que no debía ir ahí).
+
+## C. ⚡ "Entrega rápida": umbral incorrecto
+La sección "Entrega rápida" mostraba locales de **hasta 30 min** aunque la etiqueta dice **"≤ 25 min"**. Se corrigió el filtro de `parsedTime <= 30` a `parsedTime <= 25`, así solo aparecen los de menor tiempo real (coherente con la etiqueta).
+
+## D. 🧭 "Mis Pedidos" sin barra de navegación
+**Problema:** al terminar el pedido, el cliente caía en `/orders` ("Mis Pedidos") que **no renderizaba la barra superior** (`TopNavbar`), así que se sentía "otra página" y no había cómo volver a QuickEats / Restaurantes / Órdenes / carrito / perfil.
+**Fix (`frontend/app/orders/page.tsx`):** se agregó `<TopNavbar />` en los **tres** estados de la pantalla (cargando, error y contenido), con la barra a ancho completo y el contenido centrado debajo. Ahora siempre hay navegación.
+
+## E. 🎨 Identidad naranja en el flujo del cliente (antes verde)
+El recorrido cliente estaba en **verde** (`#22C55E`/`#16A34A`, `green-*`, `emerald-*`), inconsistente con la marca **naranja/mango** del resto. Se migró a `#F97316` (orange-500) / `#EA580C` (orange-600) y `orange-*` en:
+- **Detalle de restaurante:** `MenuSection` (botón "Agregar" y control +/−), `CartSidebar` ("Tu pedido" y "Ver carrito"), `RestaurantInfoCard` (badge de envío y "Abierto"), spinner de carga de la página.
+- **Tarjeta de local** (`RestaurantCard`): badge de envío (era `emerald`). Carrusel **"Entrega rápida"** (icono y píldora "≤25 min").
+- **Carrito:** `CartSummary` ("Proceder al Pago"), `CartItemsList` (control +/− y "Añadir más"), `DeliveryEstimation` (tarjeta de tiempo estimado).
+- **Pago/Checkout:** `AddressSection` y `PaymentSection` (iconos, foco de inputs, método seleccionado y botones "Proceder al pago" / "Realizar Pedido"), `StepIndicator` (pasos activos) y `OrderSummarySidebar` (avatar del restaurante).
+- En `Mis Pedidos` se pasaron a ámbar el total y el botón "Ver Restaurantes" (se conservó el **verde semántico** solo para el estado "Entregado" del stepper, que es convención universal de éxito).
+
+**Archivos modificados (Parte X):** `frontend/app/user/page.tsx`, `frontend/app/orders/page.tsx`, `frontend/app/restaurants/[id]/page.tsx`, `restaurants/[id]/components/{MenuSection,CartSidebar,RestaurantInfoCard}.tsx`, `components/shared/RestaurantCard.tsx`, `components/home/ExpressDeliveryCarousel.tsx`, `cart/components/{CartSummary,CartItemsList,DeliveryEstimation}.tsx`, `components/checkout/{AddressSection,PaymentSection,StepIndicator,OrderSummarySidebar}.tsx`.
+
+---
+
+---
+
+# PARTE XI — Ajustes finos del flujo cliente: navbar, notificaciones, pago y UX (2026-06-29)
+
+> Rama: `feature/ajustes-clientes`. Segunda pasada sobre el recorrido del cliente.
+
+## A. 🧭 Navbar: enlace activo resaltado
+`TopNavbar` no marcaba en qué sección estabas. Ahora usa `usePathname()`:
+- **Restaurantes** se resalta en ámbar (con subrayado) cuando la ruta es `/user` o `/restaurants/*`.
+- **Ordenes** se resalta cuando la ruta es `/orders`.
+Además, el navbar ahora es `sticky` y se corrigió `handleLogout` para limpiar **toda** la sesión (antes solo borraba `token`).
+
+## B. 🔔 Notificaciones rediseñadas
+Se analizó y mejoró todo el panel de notificaciones (`TopNavbar`):
+- **Cabecera** con contador de no leídas + botón **"Marcar todas"** (hace `PATCH .../read` a cada una).
+- Cada notificación muestra **ícono**, mensaje y **tiempo relativo** ("hace 5 min", "hace 2 h", fecha) ordenadas por fecha (más recientes primero).
+- Distinción visual **leída/no leída** (fondo ámbar + punto + negrita en las nuevas).
+- **Estado vacío** con ícono. **Refresco automático cada 15s** para que aparezca la notificación "Tu orden ha sido creada exitosamente" sin recargar.
+- Badge de no leídas con anillo blanco sobre la campana.
+> El **mensaje** de la notificación lo genera el `order-service` ("Tu orden ha sido creada exitosamente"). Si se quisiera enriquecer (incluir restaurante/total) habría que editar `order-service` y recrear el contenedor; queda como mejora opcional.
+
+## C. 🖼️ Imágenes de platos rotas (detalle de restaurante)
+**Causa:** algunos productos tienen el campo `image` vacío/ inválido en la BD (p. ej. "Pollo con Almendras"), por eso salía la imagen rota.
+**Fix:** se añadió `onError` con imagen de comida de respaldo en los `<img>` de `MenuSection` (detalle) y `CartItemsList` (carrito). Así nunca se ve una imagen rota.
+> **Respuesta a tu duda:** ya no necesitas "arreglar" nada en el código para que no se rompa; el fallback lo cubre. Pero para que se vea la **foto real** del plato, hay que ponerle una **URL de imagen válida** a ese producto desde *Admin → Productos → Editar* (ahora con previsualización en vivo). Es un dato, no un bug.
+
+## D. 💳 Validaciones de tarjeta en Pago
+El formulario de tarjeta no validaba nada. Ahora (`PaymentSection`):
+- **Número:** solo dígitos, se formatea en grupos de 4, exige **16 dígitos** y pasa el **algoritmo de Luhn** (la tarjeta de prueba `4242 4242 4242 4242` es válida).
+- **Vencimiento:** se autoformatea `MM/AA`, valida mes 01–12 y que **no esté vencida**.
+- **CVC:** 3–4 dígitos.
+- **Nombre del titular:** solo letras, mínimo 3 caracteres.
+- **Errores en línea** bajo cada campo (borde rojo) y el botón **"Realizar Pedido" queda deshabilitado** hasta que la tarjeta sea válida. (Con "Efectivo contra entrega" el botón se habilita sin tarjeta.)
+
+## E. 🧹 `/user`: banner "¿Cómo funciona?" eliminado
+Se quitó el bloque azul oscuro **"¿Cómo funciona? · Pide en 3 pasos"** (`HowItWorksBanner`) que desentonaba con la identidad naranja del resto.
+
+## F. 🎚️ `/user`: categorías con flechas de desplazamiento
+La fila de categorías (`All, Burgers, Pizza, … Postres`) se cortaba sin indicar que había más. Se agregaron **flechas izquierda/derecha** (en desktop) que desplazan la fila suavemente (`scrollBy`), además del scroll/arrastre que ya existía. Así se ven todas las categorías.
+
+**Archivos modificados (Parte XI):** `frontend/app/components/TopNavbar.tsx`, `frontend/app/restaurants/[id]/components/MenuSection.tsx`, `frontend/app/cart/components/CartItemsList.tsx`, `frontend/app/components/checkout/PaymentSection.tsx`, `frontend/app/user/page.tsx`.
+
+---
+
+---
+
+# PARTE XII — Landing y Login: copy realista y acceso por registro (2026-06-29)
+
+> Objetivo: que la página principal **no se note "hecha con IA"**, tenga sentido para el negocio y que el contenido protegido pida cuenta.
+
+## A. ✍️ Copy de la landing reescrito (menos "buzzwords de IA")
+Se reemplazaron textos genéricos/buzzword por copy realista de un delivery (`frontend/app/page.tsx`):
+| Antes | Ahora |
+|---|---|
+| Hero: "…tracking **hiperpreciso** en vivo. Tu **mesa** lista en 30 minutos o es gratis." | "Pide a los restaurantes de tu zona y recíbelo en casa. Sigue tu pedido en tiempo real, desde el local hasta tu puerta." |
+| "**Redefiniendo el Delivery** — Bienvenido a la **era hiperconectada**." | "**¿Por qué QuickEats?** — Comida de tus restaurantes favoritos: rápida, fácil y con seguimiento en vivo." |
+| Card oscura: "< 24 min — **Velocidad de entrega algorítmica** — Nuestro **sistema inteligente** asigna automáticamente las órdenes… rutas… crujiente." | "30 min — **Entrega rápida y seguimiento en vivo** — Tu pedido se asigna al repartidor más cercano y lo sigues en el mapa en tiempo real." |
+| "**Locales 100% Verificados** — auditorías de calidad rigurosas…" | "**Restaurantes de tu zona** — Trabajamos con locales reales, con menús y precios siempre actualizados." |
+| "**Garantía QuickEats** — Te devolvemos tu dinero…" | "**Soporte cuando lo necesites** — ¿Algún problema con tu pedido? Escríbenos y te ayudamos a resolverlo rápido." |
+| Footer: "Desarrollado con **Next.js & NestJS**." | "Tu delivery favorito en Lima." |
+
+## B. 🔒 "Joyas Gastronómicas" → ahora requieren cuenta
+**Problema:** en la landing pública, los restaurantes destacados enlazaban directo a `/restaurants/chifa-001`, dejando ver el menú **sin registrarse**.
+**Fix:** la sección se renombró a **"Algunos de nuestros restaurantes"** con subtítulo *"Crea tu cuenta gratis para ver los menús completos y hacer tu pedido."* Las tarjetas y el botón **"Ver todos"** ahora llevan a **`/register`** (antes a `/restaurants/...` y a `/restaurants`, que ni siquiera existía como página). Así el contenido para pedir queda detrás del registro.
+
+## C. 🧼 Login: textos que delataban la IA/stack eliminados
+En `frontend/app/login/page.tsx`:
+- Se quitó **"UI V2.1 – MANGO ENGINE"** (esquina inferior del panel izquierdo).
+- Se quitó **"SSL Seguro · 🔒 Autenticación Supabase"** y se reemplazó por un enlace útil: *"¿No tienes cuenta? Regístrate gratis"*.
+- En el marquee del panel se cambiaron las palabras de **stack técnico** ("NEXT • NEST • PRISMA • CLOUD") por términos de comida/delivery ("ANTOJO • RÁPIDO • FRESCO • LOCAL • SABOR").
+
+## D. 🎡 Marquee de antojos: se mantiene (recomendación)
+Sobre la duda del **marquee de "Burgers · Makis · Lomo Saltado · Pizza…"**: se **conservó**. No es un "tell" de IA, es un elemento de diseño común en apps de delivery (categorías de antojo en movimiento) y aporta dinamismo coherente con el negocio. No requiere cambios.
+
+**Archivos modificados (Parte XII):** `frontend/app/page.tsx`, `frontend/app/login/page.tsx`.
+
+---
+
+---
+
+# PARTE XIII — Login, Registro y landing: identidad naranja y limpieza (2026-06-29)
+
+## A. 🟠 Login en naranja (era verde)
+`LoginForm`: el aura de foco de los campos correo/contraseña (`focus:ring-green-500/border-green-500`) y el enlace **"¿Olvidaste tu contraseña?"** (`text-green-500`) pasaron a **ámbar/naranja** (`amber-500`/`amber-600`), coherente con la marca.
+
+## B. 🟠 Registro (`/register`) reescrito y en naranja
+- **Campos:** ahora tienen el **mismo estilo que el login** (`rounded-xl`, borde gris suave, foco ámbar) — antes eran `rounded-md` con foco verde `#22C55E`.
+- **Checkbox** de términos: verde → ámbar.
+- **Botón "Registrarse":** verde → gradiente naranja de marca (`from-amber-500 to-orange-500`).
+- **Textos "de IA/demo" eliminados:** el badge **"Intuitivo & Veloz"**, el branding **"REG V2.6 – TRACK ENGINE"** y los sellos **"🔒 Autenticación Supabase · 🛡️ SSL Seguro"**.
+- **Copy aterrizado:** se quitó la mención a "sin salir de la **Universidad Ricardo Palma**" (subtítulo) y "entregas seguras en **campus**" (beneficio 3) → ahora "pedir de los mejores restaurantes de tu zona" y "Pagos seguros y seguimiento de tu pedido en tiempo real". El negocio ya no se "amarra" a la universidad.
+- En el **login** también se reemplazaron los sellos SSL/Supabase por un enlace útil "¿No tienes cuenta? Regístrate gratis" (Parte XII).
+
+## C. 🧹 Landing: stats infladas eliminadas
+Se quitó el bloque **"500+ Restaurantes · <24 min Entrega promedio · 4.8 Calificación promedio"** del hero. Eran cifras inventadas (la BD tiene ~20 restaurantes y no hay sistema de calificaciones), justo el tipo de dato que delata un demo. El hero queda más limpio y honesto.
+
+## D. ❓ Sobre el mockup del celular (duda del usuario, sin cambios de código)
+**Sí tiene sentido y es coherente.** Es un *hero mockup* que ilustra el valor central del producto: **seguimiento del pedido en tiempo real** (repartidor "Carlos Mendoza", mapa, "En camino · Llega en 12 min", "2x Burger Suprema + Papas Gigantes"). Es un recurso visual estándar en apps de delivery (Rappi, Uber Eats usan mockups así) y **refuerza el copy nuevo** del hero ("Sigue tu pedido en tiempo real, desde el local hasta tu puerta"). Es una ilustración estática (no datos reales), lo cual es normal en una portada. **Recomendación: conservarlo**, encaja bien con la empresa.
+
+**Archivos modificados (Parte XIII):** `frontend/app/components/LoginForm.tsx`, `frontend/app/components/RegisterForm.tsx`, `frontend/app/register/page.tsx`, `frontend/app/page.tsx`.
+
+---
+
+---
+
+# PARTE XIV — Estado del proyecto: flujos, microservicios, buenas prácticas y pendientes (2026-06-29)
+
+> Análisis integral solicitado: cómo funciona todo, si se usan los microservicios, qué buenas prácticas se cumplen, qué falta mejorar, y la duda sobre "perfiles". También se borró el producto de prueba `pruebas1`.
+
+## A. ✅ ¿Se usan los 4 microservicios + gateway? — SÍ
+El documento de tópicos prometía **4 microservicios** (auth, restaurantes, órdenes, notificaciones) + **API Gateway**. Todos están en uso real:
+
+| Microservicio | Puerto | Lo usa… | Endpoints reales |
+|---|---|---|---|
+| **gateway** | 3001 | TODO el frontend (única puerta de entrada) | reenvía a los demás |
+| **auth-service** | 3002 | Login y Registro | `POST /auth/register`, `POST /auth/login` |
+| **restaurant-service** | 3003 | Catálogo de cliente, detalle, y Admin (restaurantes + productos) | `GET/POST/PATCH /restaurants`, `GET/POST/PUT/DELETE /products` |
+| **order-service** | 3004 | Checkout, "Mis Pedidos", Admin → Pedidos | `POST /orders`, `GET /orders`, `GET /orders/user/:id`, `PATCH /orders/:id/status` |
+| **notification-service** | 3005 | Campana del navbar; lo dispara el order-service al crear una orden | `POST /notifications`, `GET /notifications/:userId`, `PATCH /notifications/:id/read` |
+
+**Comunicación entre servicios verificada:** al crear una orden, `order-service` llama a `notification-service` (genera "Tu orden ha sido creada exitosamente") → es el único caso de **comunicación servicio-a-servicio**, el resto pasa por el Gateway. ✔️ Arquitectura de microservicios real.
+
+## B. 🔄 Flujos completos del sistema (cómo funciona todo)
+
+### B.1 Autenticación
+- **Registro** (`/register`): nombre, email, contraseña → `auth-service` valida (email único, hashea con bcrypt) → guarda en Supabase con rol `USER`.
+- **Login** (`/login`): valida credenciales → devuelve **JWT** + `userId` + `role`. El frontend guarda `token`/`userId`/`role`/`email` en `localStorage`. Según el rol redirige a `/admin` (ADMIN) o `/user` (USER).
+
+### B.2 Flujo del CLIENTE (rol USER)
+1. **`/user`** — catálogo: lista restaurantes (con búsqueda, categorías y carrusel "Entrega rápida ≤25 min").
+2. **`/restaurants/[id]`** — detalle: menú de productos del local + carrito lateral. "Agregar" suma al carrito (se guarda en `localStorage`).
+3. **`/cart`** — carrito: revisar items, cantidades, subtotal/envío/total → "Proceder al Pago".
+4. **`/pago`** — checkout en 2 pasos: (1) Dirección de entrega, (2) Pago (tarjeta **con validación Luhn** o efectivo) → `POST /orders`.
+5. **`/orders`** ("Mis Pedidos") — historial del usuario con estado en vivo (stepper Recibido→Cocina→En camino→Entregado).
+6. **Notificaciones** (campana) — avisos del usuario (p.ej. orden creada), con "marcar como leída".
+
+### B.3 Flujo del ADMIN (rol ADMIN)
+- **`/admin`** — Panel de Control: métricas reales (ingresos sin cancelados, nº pedidos, restaurantes, productos) + gráficos + pedidos recientes + restaurantes con más pedidos.
+- **`/admin/restaurants`** — listar, buscar, **crear**, **editar**, y abrir/cerrar (toggle). *(No hay botón "eliminar restaurante": el backend no expone `DELETE /restaurants`.)*
+- **`/admin/products`** — listar, filtrar por restaurante, **crear**, **editar**, **eliminar**, marcar disponible/oculto.
+- **`/admin/orders`** — ver todos los pedidos, filtrar por estado, **cambiar el estado** (PENDING→PREPARING→…→DELIVERED/CANCELLED).
+
+### B.4 ⭐ Cómo funciona "colocar imágenes" (tu duda puntual)
+**Hoy las imágenes son por URL, no por subida de archivo.**
+- Tanto restaurantes como productos guardan un campo `image` que es **un texto con la URL** de una imagen pública (Unsplash, Postimg, etc.).
+- Para ponerle imagen a un restaurante/producto: *Admin → Restaurantes/Productos → Crear o Editar →* campo **"URL de la Imagen"** → pegas el enlace. El formulario muestra **previsualización en vivo**. Al guardar, se almacena ese texto (la URL) en la BD.
+- Al mostrarse, se hace `<img src={url}>` con un **fallback** (si la URL falla o está vacía, se ve una imagen genérica de comida).
+- **Por eso "pruebas1" tenía una selfie:** alguien pegó una URL de una foto cualquiera. No se "sube" la foto; se referencia por enlace.
+- **Mejora pendiente:** integrar **subida de archivos real** (ej. *Supabase Storage*) para que el admin suba la foto desde su PC en vez de pegar una URL.
+
+## C. 📋 Tópicos del profesor y buenas prácticas — estado actual
+
+| Tópico / práctica | Estado | Detalle |
+|---|---|---|
+| **Git / GitFlow** | ✅ | `main`, `develop`, ramas `feature/*`, PRs. Falta que **ambos integrantes** tengan commits. |
+| **Docker** | ✅ | Dockerfile por servicio + `docker-compose`. *(El contenedor `postgres_db` no se usa: la BD es Supabase.)* |
+| **CI/CD (GitHub Actions)** | ✅ | `ci-cd.yml` construye y sube imágenes a Azure en cada push a `develop`. *(Si las Container Apps no toman la imagen, falta el paso `az containerapp update` / min-replicas — ver Parte previa.)* |
+| **Cloud Computing** | ⚠️ | Desplegado en **Azure Container Apps** (no Render). El **documento dice Render** → hay que **alinear el texto a Azure**. |
+| **Kubernetes** | ❌ | **No hay manifiestos** (`Deployment/Service/Ingress`). Es el entregable más en riesgo. |
+| **Buenas prácticas de código** | ✅/⚠️ | `ValidationPipe` + DTOs en microservicios, `bcrypt`, JWT, `ThrottlerModule` (rate limit) en auth. Quedan `console.log` de depuración y el Gateway reenvía `body: any` sin validar. |
+| **Seguridad** | ⚠️ | Credenciales y `JWT_SECRET` están en `.env` versionados; CORS abierto; contraseña mínima de 6 sin complejidad; sin verificación de email. |
+
+## D. 🔧 Lo que aún faltaría mejorar / arreglar (honesto)
+1. **Kubernetes** (entregable del tópico) — no existe; hay que crear manifiestos y probarlos en Minikube/kind.
+2. **Alinear "Render vs Azure"** en el documento del proyecto (hoy contradice la implementación real).
+3. **Datos de prueba en la BD:** quedan `Hamburguesa Clasica` (desc "Prueba de flujo") y `MESON URP` (desc "Prueba"). Conviene limpiarlos/editarlos. *(`pruebas1` ya se borró.)*
+4. **Subida real de imágenes** (Supabase Storage) en vez de pegar URLs.
+5. **Endpoint `DELETE /restaurants`** + botón en el panel (hoy no se puede borrar un restaurante desde la UI).
+6. **Seguridad:** sacar secretos del repo, restringir CORS, reforzar contraseña, y (opcional) verificación de email.
+7. **Limpieza de código:** quitar `console.log`/"spy" del Gateway y comentarios de IA sobrantes.
+8. **Despliegue:** confirmar que el pipeline efectivamente actualiza las Container Apps (no solo sube la imagen a ACR).
+9. **Detalle de pedido en tiempo real:** el "stepper" es ilustrativo; el estado solo cambia cuando el admin lo cambia (no hay repartidor real). Es aceptable para el alcance, pero conviene aclararlo en la sustentación.
+
+## E. ❓ ¿Hace falta "Perfiles" de usuario? (duda, sin código)
+**No es obligatorio** y **no rompe nada que no exista.** El alcance declarado del proyecto solo pide: *registrarse, autenticarse, explorar restaurantes y generar órdenes* — todo eso ya funciona. Lo "de cuenta" que el usuario necesita **ya está cubierto**:
+- El navbar muestra su **email** y permite **cerrar sesión**.
+- **"Mis Pedidos"** funciona como su historial/área personal.
+
+Un módulo de **"Perfil"** (editar nombre, dirección por defecto, cambiar contraseña) sería un **extra de valor**, pero **no estaba planeado ni es requisito**. Recomendación: **no lo agregues solo por agregarlo**; si quieres sumar un punto de "funcionalidad", lo más útil sería guardar la **dirección de entrega** del usuario (hoy se escribe en cada pago). Pero el proyecto está **correcto y completo** sin un perfil dedicado.
+
+**Acción de datos (Parte XIV):** se eliminó el producto de prueba `pruebas1` (vía `DELETE /products/:id`). Quedan 52 productos.
+
+---
+
+*Parte I: auditoría de solo lectura. Parte II: correcciones de integración sobre archivos fuente. Parte III: diagnóstico en runtime sobre Docker y fix definitivo del 500 (TLS Supabase), verificado con los contenedores en ejecución. Parte IV: frontend (sesión real, limpieza de landing y Panel de Admin con datos reales del sistema). Parte V: flujo "Restaurantes" del panel admin (imágenes 404, lógica de apertura/toggle, payload de edición, datos falsos y polling). Parte VI: flujo "Productos" del panel admin (imágenes con fallback/preview, select de categoría robusto; backend CRUD verificado). Parte VII: unificación de categorías (BD + catálogo único), borrado de restaurantes de prueba y estética mango en los formularios de producto. Parte VIII: flujo "Pedidos" del panel admin (bugs de className/Mango Engine/error muerto/mounted, + rediseño profesional con tarjetas resumen, método de pago y estado con color). Parte IX: métrica de ingresos coherente (excluye cancelados = S/732) y Sidebar del admin colapsable (menú hamburguesa con iconos, persistente y sin parpadeo). Parte X: flujo de pedido del cliente (carga robusta de `/user`, badge de universidad, umbral de entrega rápida ≤25 min, navbar en Mis Pedidos e identidad naranja en todo el recorrido). Parte XI: ajustes finos del flujo cliente (navbar con enlace activo, notificaciones rediseñadas, fallback de imágenes de platos, validaciones de tarjeta, eliminación del banner y flechas en categorías). Parte XII: landing y login con copy realista (sin buzzwords de IA), destacados detrás de registro y limpieza de textos técnicos. Parte XIII: identidad naranja en login/registro y limpieza de textos demo + stats infladas de la landing. Parte XIV: estado integral del proyecto (microservicios, flujos completos, cómo funcionan las imágenes, tópicos/buenas prácticas, pendientes y la duda de perfiles); borrado de `pruebas1`.*

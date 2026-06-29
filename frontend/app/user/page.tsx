@@ -2,13 +2,12 @@
 
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, SlidersHorizontal, UtensilsCrossed, Sparkles } from 'lucide-react';
+import { Search, SlidersHorizontal, UtensilsCrossed, ChevronLeft, ChevronRight } from 'lucide-react';
 import { LOCAL_CATEGORIES, Restaurant } from '../data/mockData';
 import { supabase } from '../services/supabase';
 import TopNavbar from '../components/TopNavbar';
 import RestaurantCard from '../components/shared/RestaurantCard';
 import ExpressDeliveryCarousel from '../components/home/ExpressDeliveryCarousel';
-import HowItWorksBanner from '../components/home/HowItWorksBanner';
 
 export default function UserPage() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
@@ -18,8 +17,13 @@ export default function UserPage() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  const isFetchingRef = useRef(false);
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+  // 🎚️ Scroll horizontal de las píldoras de categorías (flechas en desktop).
+  const pillsRef = useRef<HTMLDivElement>(null);
+  const scrollPills = (dir: 'left' | 'right') => {
+    pillsRef.current?.scrollBy({ left: dir === 'left' ? -260 : 260, behavior: 'smooth' });
+  };
 
   // ⏱️ Debounce para la caja de búsqueda (Evita saturar cálculos en memoria)
   useEffect(() => {
@@ -27,44 +31,38 @@ export default function UserPage() {
     return () => clearTimeout(handler);
   }, [search]);
 
-  // 🌐 1. POLING SEGURO (Actúa como respaldo silencioso si WebSockets falla)
+  // 🌐 1. Carga inicial + polling de respaldo cada 10s.
+  // (Reescrito: el guard con `isFetchingRef` provocaba que, con el doble montaje de React StrictMode
+  // en dev, el segundo montaje saliera sin cargar y el resultado del primero se descartara → la
+  // pantalla quedaba en "loading" y los restaurantes solo aparecían al recargar.)
   useEffect(() => {
-    let isMounted = true;
-    let timerId: NodeJS.Timeout;
+    let active = true;
 
     async function loadRestaurants() {
-      if (document.hidden || !isMounted || isFetchingRef.current) return;
-
-      isFetchingRef.current = true;
+      if (document.hidden) return;
       try {
         const response = await fetch(`${baseUrl}/restaurants?_t=${Date.now()}`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
-          cache: 'no-store'
+          cache: 'no-store',
         });
-
         if (response.ok) {
           const data = await response.json();
-          if (isMounted && Array.isArray(data)) {
-            setRestaurants(data);
-          }
+          if (active && Array.isArray(data)) setRestaurants(data);
         }
       } catch (error) {
-        console.error("Error en sincronización de locales:", error);
+        console.error('Error en sincronización de locales:', error);
       } finally {
-        isFetchingRef.current = false;
-        if (isMounted) {
-          setLoading(false);
-          timerId = setTimeout(loadRestaurants, 10000); // Polling de respaldo cada 10s
-        }
+        if (active) setLoading(false);
       }
     }
 
     loadRestaurants();
+    const intervalId = setInterval(loadRestaurants, 10000);
 
     return () => {
-      isMounted = false;
-      clearTimeout(timerId);
+      active = false;
+      clearInterval(intervalId);
     };
   }, [baseUrl]);
 
@@ -132,7 +130,7 @@ export default function UserPage() {
         ? r.deliveryTime 
         : parseInt(String(r.deliveryTime).replace(/\D/g, ''), 10);
         
-      return !isNaN(parsedTime) && parsedTime <= 30;
+      return !isNaN(parsedTime) && parsedTime <= 25;
     });
 
     return { openRestaurants: open, closedRestaurants: closed, expressRestaurants: express };
@@ -160,9 +158,6 @@ export default function UserPage() {
         
         <div className="max-w-7xl mx-auto relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-1">
-            <span className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-md text-white font-black text-[10px] uppercase tracking-widest px-3 py-1.5 rounded-xl shadow-xs">
-              <Sparkles size={10} className="fill-white" /> Universidad Ricardo Palma
-            </span>
             <h1 className="text-white font-black text-3xl sm:text-4xl lg:text-5xl tracking-tight leading-tight font-poppins">
               ¿Qué te provoca pedir hoy?
             </h1>
@@ -193,9 +188,21 @@ export default function UserPage() {
       {/* Contenido Base */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 -mt-12 relative z-20">
         
-        {/* Píldoras de Categorías (Mapeadas de Forma Única y Segura) */}
-        <div className="mb-10">
-          <div className="flex items-center gap-2.5 overflow-x-auto py-2 scrollbar-none" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        {/* Píldoras de Categorías con flechas de desplazamiento */}
+        <div className="mb-10 relative">
+          <button
+            onClick={() => scrollPills('left')}
+            aria-label="Categorías anteriores"
+            className="hidden sm:flex absolute -left-2 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-white shadow-md border border-slate-100 items-center justify-center text-slate-500 hover:text-amber-500 hover:border-amber-200 transition-colors"
+          >
+            <ChevronLeft size={18} />
+          </button>
+
+          <div
+            ref={pillsRef}
+            className="flex items-center gap-2.5 overflow-x-auto py-2 scrollbar-none sm:px-10 scroll-smooth"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
             {categoriesList.map((cat) => {
               const isSelected = activeCategory.toLowerCase() === cat.id.toLowerCase();
               return (
@@ -214,6 +221,14 @@ export default function UserPage() {
               );
             })}
           </div>
+
+          <button
+            onClick={() => scrollPills('right')}
+            aria-label="Más categorías"
+            className="hidden sm:flex absolute -right-2 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-white shadow-md border border-slate-100 items-center justify-center text-slate-500 hover:text-amber-500 hover:border-amber-200 transition-colors"
+          >
+            <ChevronRight size={18} />
+          </button>
         </div>
 
         {/* Shimmer de Carga */}
@@ -326,7 +341,6 @@ export default function UserPage() {
           </div>
         )}
 
-        {!search && activeCategory === 'all' && <HowItWorksBanner />}
       </div>
     </div>
   );

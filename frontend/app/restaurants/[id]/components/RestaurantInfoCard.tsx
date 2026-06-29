@@ -13,15 +13,15 @@ export default function RestaurantInfoCard({ description, deliveryFee }: Restaur
           {description}
         </p>
         <div className="flex items-center gap-2 text-gray-400 text-[0.82rem] mt-0.5">
-          <span className="text-[#22C55E] font-bold bg-green-50 px-2 py-0.5 rounded-md">
+          <span className="text-[#F97316] font-bold bg-orange-50 px-2 py-0.5 rounded-md">
             S/. {deliveryFee.toFixed(2)} envío
           </span>
         </div>
       </div>
       
       <div className="shrink-0 flex items-center">
-        <span className="bg-[#22C55E]/10 text-[#22C55E] px-3 py-1 rounded-full font-bold text-[0.8rem] flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 bg-[#22C55E] rounded-full" />
+        <span className="bg-[#F97316]/10 text-[#F97316] px-3 py-1 rounded-full font-bold text-[0.8rem] flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 bg-[#F97316] rounded-full" />
           Abierto
         </span>
       </div>

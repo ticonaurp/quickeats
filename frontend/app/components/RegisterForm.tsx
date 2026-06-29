@@ -85,7 +85,7 @@ export function RegisterForm() {
           placeholder="Ej. Alejandro Briceño"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="mt-1 block w-full rounded-md border border-gray-300 p-2 shadow-sm text-black focus:border-[#22C55E] focus:ring-[#22C55E]"
+          className="mt-1 block w-full rounded-xl border border-gray-200 px-4 py-3.5 text-base text-black bg-white placeholder-gray-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
           required
         />
       </div>
@@ -98,7 +98,7 @@ export function RegisterForm() {
           placeholder="correo@ejemplo.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="mt-1 block w-full rounded-md border border-gray-300 p-2 shadow-sm text-black focus:border-[#22C55E] focus:ring-[#22C55E]"
+          className="mt-1 block w-full rounded-xl border border-gray-200 px-4 py-3.5 text-base text-black bg-white placeholder-gray-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
           required
         />
       </div>
@@ -111,7 +111,7 @@ export function RegisterForm() {
           placeholder="Mínimo 6 caracteres"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="mt-1 block w-full rounded-md border border-gray-300 p-2 shadow-sm text-black focus:border-[#22C55E] focus:ring-[#22C55E]"
+          className="mt-1 block w-full rounded-xl border border-gray-200 px-4 py-3.5 text-base text-black bg-white placeholder-gray-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
           required
         />
       </div>
@@ -124,7 +124,7 @@ export function RegisterForm() {
           placeholder="Repite tu contraseña"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
-          className="mt-1 block w-full rounded-md border border-gray-300 p-2 shadow-sm text-black focus:border-[#22C55E] focus:ring-[#22C55E]"
+          className="mt-1 block w-full rounded-xl border border-gray-200 px-4 py-3.5 text-base text-black bg-white placeholder-gray-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
           required
         />
       </div>
@@ -137,7 +137,7 @@ export function RegisterForm() {
             type="checkbox"
             checked={acceptTerms}
             onChange={(e) => setAcceptTerms(e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300 text-[#22C55E] focus:ring-[#22C55E]"
+            className="h-4 w-4 rounded border-gray-300 text-amber-500 focus:ring-amber-500"
             required
           />
         </div>
@@ -148,10 +148,10 @@ export function RegisterForm() {
         </div>
       </div>
 
-      {/* Botón de Registrarse en color VERDE oficial */}
-      <button 
-        type="submit" 
-        className="w-full bg-[#22C55E] text-white p-2 rounded-md font-bold mt-2 hover:bg-green-600 transition-colors"
+      {/* Botón de Registrarse con identidad naranja */}
+      <button
+        type="submit"
+        className="w-full bg-linear-to-r from-amber-500 to-orange-500 text-white py-3.5 rounded-xl font-bold text-base mt-2 hover:opacity-95 shadow-md shadow-orange-500/10 transition-all"
       >
         Registrarse
       </button>

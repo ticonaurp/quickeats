@@ -158,7 +158,7 @@ export default function RestaurantDetailPage({ params }: RestaurantPageProps) {
   if (loading || !restaurantInfo) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#F8FAFC]">
-        <div className="w-10 h-10 border-4 border-[#22C55E] border-t-transparent rounded-full animate-spin" />
+        <div className="w-10 h-10 border-4 border-[#F97316] border-t-transparent rounded-full animate-spin" />
         <p className="mt-4 text-gray-500 font-bold text-sm tracking-tight">Sincronizando comercio con PostgreSQL...</p>
       </div>
     );

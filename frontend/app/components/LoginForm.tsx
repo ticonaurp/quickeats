@@ -83,7 +83,7 @@ function LoginFields() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="tu@ejemplo.com"
-            className="w-full pl-12 pr-4 py-3.5 border border-gray-200 rounded-xl text-base text-black focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all bg-white placeholder-gray-500 disabled:opacity-60"
+            className="w-full pl-12 pr-4 py-3.5 border border-gray-200 rounded-xl text-base text-black focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all bg-white placeholder-gray-500 disabled:opacity-60"
           />
         </div>
       </div>
@@ -92,7 +92,7 @@ function LoginFields() {
       <div>
         <div className="flex items-center justify-between mb-2">
           <label className="block text-base font-medium text-gray-700">Contraseña</label>
-          <button type="button" className="text-sm font-medium text-green-500 hover:underline">¿Olvidaste tu contraseña?</button>
+          <button type="button" className="text-sm font-medium text-amber-600 hover:underline">¿Olvidaste tu contraseña?</button>
         </div>
         <div className="relative">
           <Lock size={19} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -103,7 +103,7 @@ function LoginFields() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
-            className="w-full pl-12 pr-12 py-3.5 border border-gray-200 rounded-xl text-base text-black focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all bg-white placeholder-gray-500 disabled:opacity-60"
+            className="w-full pl-12 pr-12 py-3.5 border border-gray-200 rounded-xl text-base text-black focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all bg-white placeholder-gray-500 disabled:opacity-60"
           />
           <button 
             type="button" 
