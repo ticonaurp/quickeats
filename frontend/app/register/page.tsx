@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, CheckCircle2, Utensils, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Utensils, ShieldCheck } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
 import { RegisterForm } from '../components/RegisterForm';
 
@@ -39,14 +39,11 @@ export default function RegisterPage() {
           <div className="text-white relative z-10 max-w-lg space-y-10">
             {/* Títulos de Bienvenida */}
             <div className="space-y-3">
-              <span className="inline-flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-400 font-black text-[10px] uppercase tracking-widest px-3 py-1 rounded-full shadow-xs">
-                <Sparkles size={10} className="text-amber-400 fill-amber-400/20" /> Intuitivo & Veloz
-              </span>
               <h2 className="text-5xl font-black font-poppins tracking-tight leading-tight">
                 Únete a QuickEats
               </h2>
               <p className="text-slate-400 text-base font-medium leading-relaxed">
-                Regístrate en segundos y comienza a disfrutar de tus antojos favoritos sin salir de la Universidad Ricardo Palma.
+                Regístrate en segundos y empieza a pedir de los mejores restaurantes de tu zona.
               </p>
             </div>
             
@@ -86,7 +83,7 @@ export default function RegisterPage() {
                 <div className="bg-slate-900/40 backdrop-blur-md p-4 rounded-2xl border border-white/5 shadow-xs flex items-start gap-3.5 flex-1 transform hover:translate-x-1 transition-transform duration-200">
                   <ShieldCheck size={20} className="text-slate-400 shrink-0 mt-0.5" />
                   <span className="text-slate-200 text-sm font-semibold leading-snug">
-                    Validaciones digitales y entregas seguras en campus.
+                    Pagos seguros y seguimiento de tu pedido en tiempo real.
                   </span>
                 </div>
               </div>
@@ -94,11 +91,6 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          {/* Branding inferior */}
-          <div className="absolute bottom-10 left-10 flex items-center gap-2.5">
-            <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-            <span className="text-slate-600 text-xs font-mono tracking-[1.5px]">REG V2.6 – TRACK ENGINE</span>
-          </div>
         </div>
 
         {/* === PANEL DERECHO - FORMULARIO DE REGISTRO === */}
@@ -129,15 +121,6 @@ export default function RegisterPage() {
             {/* Formulario */}
             <div className="bg-white rounded-3xl shadow-2xl shadow-slate-100 border border-slate-100 p-1">
               <RegisterForm />
-            </div>
-
-            {/* Señales de confianza */}
-            <div className="flex items-center justify-center gap-4 mt-8 text-xs text-slate-400 font-medium">
-              <div className="flex items-center gap-1">
-                🔒 Autenticación Supabase
-              </div>
-              <span>•</span>
-              <div>🛡️ SSL Seguro</div>
             </div>
 
           </div>

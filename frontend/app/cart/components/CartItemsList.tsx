@@ -38,7 +38,14 @@ export default function CartItemsList({ cart, restaurantId, onUpdateQuantity, on
             >
               <div className="flex items-center gap-4 flex-1">
                 <div className="w-[80px] h-[70px] shrink-0 rounded-xl overflow-hidden bg-gray-50">
-                  <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                  <img
+                    src={item.image}
+                    alt={item.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&q=80';
+                    }}
+                  />
                 </div>
                 
                 <div className="flex flex-col flex-1">
@@ -48,7 +55,7 @@ export default function CartItemsList({ cart, restaurantId, onUpdateQuantity, on
                   <div className="flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-lg p-0.5 w-fit mt-2">
                     <button onClick={() => onUpdateQuantity(item.id, 'decrease')} className="w-5 h-5 bg-white border border-gray-200 rounded flex items-center justify-center text-gray-500 hover:bg-gray-100"><Minus size={10} /></button>
                     <span className="font-bold text-[#0F172A] text-[0.82rem] px-0.5">{item.quantity}</span>
-                    <button onClick={() => onUpdateQuantity(item.id, 'increase')} className="w-5 h-5 bg-[#22C55E] text-white rounded flex items-center justify-center hover:bg-[#16A34A]"><Plus size={10} /></button>
+                    <button onClick={() => onUpdateQuantity(item.id, 'increase')} className="w-5 h-5 bg-[#F97316] text-white rounded flex items-center justify-center hover:bg-[#EA580C]"><Plus size={10} /></button>
                   </div>
                 </div>
               </div>
@@ -76,7 +83,7 @@ export default function CartItemsList({ cart, restaurantId, onUpdateQuantity, on
             router.push(`/restaurants/${restaurantId}`);
           }
         }}
-        className="w-full bg-white text-[#22C55E] font-bold text-[0.85rem] py-3 rounded-2xl flex items-center justify-center gap-1.5 border border-dashed border-gray-200 hover:border-[#22C55E]/40 hover:bg-green-50/40 transition-colors"
+        className="w-full bg-white text-[#F97316] font-bold text-[0.85rem] py-3 rounded-2xl flex items-center justify-center gap-1.5 border border-dashed border-gray-200 hover:border-[#F97316]/40 hover:bg-orange-50/40 transition-colors"
       >
         <Plus size={15} className="stroke-[2.5]" />
         Añadir más productos

@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: quickeats
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          # Esta imagen hay que CONSTRUIRLA (ver guía). Debe compilarse con
+          # --build-arg NEXT_PUBLIC_API_URL=http://localhost:3001 (la URL del gateway).
+          image: quickeats-frontend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: quickeats
+spec:
+  selector:
+    app: frontend
+  ports:
+    - port: 3000
+      targetPort: 3000
+  # LoadBalancer → en Docker Desktop queda accesible en http://localhost:3000.
+  type: LoadBalancer

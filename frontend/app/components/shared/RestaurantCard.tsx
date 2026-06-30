@@ -80,8 +80,8 @@ export default function RestaurantCard({ r, onClick }: RestaurantCardProps) {
             <span>{r.deliveryTime} min</span>
           </div>
           
-          <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-2.5 py-1.5 rounded-xl shrink-0 border border-emerald-100/50">
-            <Bike size={14} className="text-emerald-500" />
+          <div className="flex items-center gap-1.5 bg-orange-50 text-orange-700 px-2.5 py-1.5 rounded-xl shrink-0 border border-orange-100/50">
+            <Bike size={14} className="text-orange-500" />
             <span>
               {(r.deliveryFee ?? 0) === 0 
                 ? 'Envío Gratis' 

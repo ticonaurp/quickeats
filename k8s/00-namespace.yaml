@@ -1,0 +1,5 @@
+# Namespace dedicado para aislar todos los recursos de QuickEats en el clúster.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: quickeats

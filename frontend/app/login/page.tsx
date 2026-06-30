@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, ShieldCheck } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
 import { LoginForm } from '../components/LoginForm';
 
@@ -61,20 +61,15 @@ export default function LoginPage() {
             <div className="overflow-hidden whitespace-nowrap flex min-w-full">
               <div className="animate-wave-slow flex shrink-0 text-6xl xl:text-7xl font-black tracking-[-2px] text-transparent uppercase select-none"
                    style={{ WebkitTextStroke: '1.5px rgba(245, 158, 11, 0.35)' }}>
-                DELIVERY • INSTANT • CLOUD • NEXT • NEST • PRISMA •&nbsp;
+                DELIVERY • ANTOJO • RÁPIDO • FRESCO • LOCAL • SABOR •&nbsp;
               </div>
               <div className="animate-wave-slow flex shrink-0 text-6xl xl:text-7xl font-black tracking-[-2px] text-transparent uppercase select-none"
                    style={{ WebkitTextStroke: '1.5px rgba(245, 158, 11, 0.35)' }}>
-                DELIVERY • INSTANT • CLOUD • NEXT • NEST • PRISMA •&nbsp;
+                DELIVERY • ANTOJO • RÁPIDO • FRESCO • LOCAL • SABOR •&nbsp;
               </div>
             </div>
           </div>
 
-          {/* Branding inferior adaptado */}
-          <div className="absolute bottom-10 left-10 flex items-center gap-2.5">
-            <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-            <span className="text-slate-500 text-xs font-mono tracking-[1.5px]">UI V2.1 – MANGO ENGINE</span>
-          </div>
         </div>
 
         {/* === PANEL DERECHO - FORMULARIO === */}
@@ -104,15 +99,13 @@ export default function LoginPage() {
               <LoginForm />
             </div>
 
-            {/* Señales de confianza */}
-            <div className="flex items-center justify-center gap-4 mt-8 text-xs text-slate-400 font-medium">
-              <div className="flex items-center gap-1">
-                <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                <span>SSL Seguro</span>
-              </div>
-              <span>•</span>
-              <div>🔒 Autenticación Supabase</div>
-            </div>
+            {/* Enlace a registro */}
+            <p className="text-center text-sm text-slate-500 mt-8">
+              ¿No tienes cuenta?{' '}
+              <Link href="/register" className="font-bold text-amber-600 hover:text-amber-700 transition-colors">
+                Regístrate gratis
+              </Link>
+            </p>
           </div>
         </div>
       </main>

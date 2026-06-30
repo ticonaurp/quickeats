@@ -17,7 +17,7 @@ export default function OrderSummarySidebar({
       
       {restaurant && (
         <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl mb-4">
-          <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center text-white font-bold text-lg">
+          <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center text-white font-bold text-lg">
             {restaurant.name.charAt(0)}
           </div>
           <div>

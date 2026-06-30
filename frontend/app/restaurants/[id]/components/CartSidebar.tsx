@@ -22,11 +22,11 @@ export default function CartSidebar({ cart, deliveryFee, onUpdateQuantity }: Car
       {/* Cabecera */}
       <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-4">
         <div className="flex items-center gap-2">
-          <ShoppingCart size={18} className="text-[#22C55E]" />
+          <ShoppingCart size={18} className="text-[#F97316]" />
           <h2 className="font-bold text-[#0F172A] text-[1rem]">Tu pedido</h2>
         </div>
         {totalItems > 0 && (
-          <span className="w-5 h-5 bg-[#22C55E] text-white font-bold text-[0.72rem] rounded-full flex items-center justify-center shadow-sm">
+          <span className="w-5 h-5 bg-[#F97316] text-white font-bold text-[0.72rem] rounded-full flex items-center justify-center shadow-sm">
             {totalItems}
           </span>
         )}
@@ -48,7 +48,7 @@ export default function CartSidebar({ cart, deliveryFee, onUpdateQuantity }: Car
                   <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-100 rounded-lg p-0.5">
                     <button onClick={() => onUpdateQuantity(item.id, item.name, item.price, 'decrease')} className="w-5 h-5 bg-white border border-gray-200 rounded flex items-center justify-center text-gray-500 hover:bg-gray-100"><Minus size={10} /></button>
                     <span className="font-bold text-[#0F172A] text-[0.82rem] px-0.5">{item.quantity}</span>
-                    <button onClick={() => onUpdateQuantity(item.id, item.name, item.price, 'increase')} className="w-5 h-5 bg-[#22C55E] text-white rounded flex items-center justify-center hover:bg-[#16A34A]"><Plus size={10} /></button>
+                    <button onClick={() => onUpdateQuantity(item.id, item.name, item.price, 'increase')} className="w-5 h-5 bg-[#F97316] text-white rounded flex items-center justify-center hover:bg-[#EA580C]"><Plus size={10} /></button>
                   </div>
                   <span className="text-[#0F172A] font-medium truncate max-w-[120px] sm:max-w-[140px]">{item.name}</span>
                 </div>
@@ -65,7 +65,7 @@ export default function CartSidebar({ cart, deliveryFee, onUpdateQuantity }: Car
             {/* 🟢 Redirección corregida a /cart */}
             <button 
               onClick={() => router.push('/cart')} 
-              className="w-full bg-[#22C55E] hover:bg-[#16A34A] text-white font-bold text-[0.9rem] py-3 px-4 rounded-xl flex items-center justify-center gap-1 mt-4 transition-colors shadow-md shadow-green-100"
+              className="w-full bg-[#F97316] hover:bg-[#EA580C] text-white font-bold text-[0.9rem] py-3 px-4 rounded-xl flex items-center justify-center gap-1 mt-4 transition-colors shadow-md shadow-orange-100"
             >
               Ver carrito
               <ChevronRight size={16} className="mt-0.5" />

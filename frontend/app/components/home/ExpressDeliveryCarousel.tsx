@@ -14,11 +14,11 @@ export default function ExpressDeliveryCarousel({ restaurants, onSelect }: Expre
     <div className="mb-9 font-sans antialiased">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-[#22C55E] rounded-xl flex items-center justify-center">
+          <div className="w-7 h-7 bg-[#F97316] rounded-xl flex items-center justify-center">
             <Zap size={14} className="text-white fill-white" />
           </div>
           <h2 className="font-bold text-[#0F172A] text-[1.1rem] tracking-tight">Entrega rápida</h2>
-          <span className="bg-[#22C55E]/10 text-[#22C55E] px-2 py-0.5 rounded-full text-[0.72rem] font-bold">≤ 25 min</span>
+          <span className="bg-[#F97316]/10 text-[#F97316] px-2 py-0.5 rounded-full text-[0.72rem] font-bold">≤ 25 min</span>
         </div>
       </div>
 

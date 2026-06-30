@@ -53,7 +53,14 @@ export default function MenuSection({ items, cart, onUpdateQuantity }: MenuSecti
             {/* Multimedia e Interacción Inteligente (Derecha) */}
             <div className="flex flex-col items-center justify-between shrink-0 gap-3">
               <div className="w-[110px] h-[90px] rounded-xl overflow-hidden bg-gray-50">
-                <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                <img
+                  src={item.image}
+                  alt={item.name}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&q=80';
+                  }}
+                />
               </div>
               
               {quantity > 0 ? (
@@ -68,7 +75,7 @@ export default function MenuSection({ items, cart, onUpdateQuantity }: MenuSecti
                   <span className="text-[#0F172A] font-bold text-[0.88rem]">{quantity}</span>
                   <button 
                     onClick={() => onUpdateQuantity(item.id, item.name, item.price, 'increase')}
-                    className="w-7 h-7 bg-[#22C55E] text-white rounded-lg flex items-center justify-center hover:bg-[#16A34A] transition-colors"
+                    className="w-7 h-7 bg-[#F97316] text-white rounded-lg flex items-center justify-center hover:bg-[#EA580C] transition-colors"
                   >
                     <Plus size={12} className="stroke-[2.5]" />
                   </button>
@@ -78,7 +85,7 @@ export default function MenuSection({ items, cart, onUpdateQuantity }: MenuSecti
                 <motion.button 
                   whileTap={{ scale: 0.95 }}
                   onClick={() => onUpdateQuantity(item.id, item.name, item.price, 'increase')}
-                  className="w-full bg-[#22C55E] text-white font-bold text-[0.82rem] py-1.5 px-3 rounded-xl flex items-center justify-center gap-1 hover:bg-[#16A34A] transition-colors shadow-sm shadow-green-100"
+                  className="w-full bg-[#F97316] text-white font-bold text-[0.82rem] py-1.5 px-3 rounded-xl flex items-center justify-center gap-1 hover:bg-[#EA580C] transition-colors shadow-sm shadow-orange-100"
                 >
                   <Plus size={14} className="stroke-[2.5]" />
                   Agregar

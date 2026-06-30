@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+  namespace: quickeats
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+    spec:
+      containers:
+        - name: auth-service
+          image: quickeats-auth-service:latest
+          imagePullPolicy: IfNotPresent
+          # La imagen es la etapa "builder" (sin CMD), por eso indicamos el arranque.
+          command: ["node", "dist/main.js"]
+          ports:
+            - containerPort: 3002
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: quickeats-secrets
+                  key: DATABASE_URL_AUTH
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: quickeats-secrets
+                  key: JWT_SECRET
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  namespace: quickeats
+spec:
+  selector:
+    app: auth-service
+  ports:
+    - port: 3002
+      targetPort: 3002
+  type: ClusterIP

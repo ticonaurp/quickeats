@@ -1,0 +1,39 @@
+# 🌐 Ingress: expone el frontend y el gateway por nombre de host.
+# Requiere un Ingress Controller (ej. ingress-nginx). En Docker Desktop:
+#   kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml
+#
+# Los dominios *.localhost resuelven solos a 127.0.0.1 (no hay que editar el archivo hosts):
+#   - http://quickeats.localhost      -> frontend
+#   - http://api.quickeats.localhost  -> gateway (API)
+#
+# NOTA: para que el frontend use el Ingress, hay que construir su imagen con
+# --build-arg NEXT_PUBLIC_API_URL=http://api.quickeats.localhost
+# (Para la demo rápida vía LoadBalancer se usa http://localhost:3001; ver k8s/README.md.)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: quickeats-ingress
+  namespace: quickeats
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: quickeats.localhost
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000
+    - host: api.quickeats.localhost
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: gateway
+                port:
+                  number: 3001
