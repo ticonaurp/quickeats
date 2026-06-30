@@ -21,7 +21,7 @@
 
 La solución propuesta consiste en **QuickEats**, una mini plataforma de delivery inspirada en aplicaciones como Uber Eats, diseñada bajo un enfoque de arquitectura distribuida basada en microservicios. El proyecto busca aplicar de manera integrada los principios de desarrollo cloud-native, automatización de despliegues y separación de responsabilidades en servicios independientes, replicando un caso de uso realista del sector gastronomómico digital. Los usuarios finales podrán registrarse, autenticarse, explorar restaurantes con sus respectivos menús y generar órdenes de pedido.
 
-La arquitectura técnica de la plataforma aprovecha las ventajas de un entorno contenerizado y desacoplado, donde el frontend desarrollado en **Next.js con Tailwind CSS** consume servicios a través de un **API Gateway** centralizado, el cual orquesta la comunicación HTTP REST entre cuatro microservicios independientes (**autenticación, restaurantes, órdenes y notificaciones**) construidos en **NestJS con Prisma ORM** y autenticación basada en **JWT**. La persistencia de datos se gestiona mediante **PostgreSQL**, mientras que el ecosistema se despliega de forma automatizada a través de un pipeline de integración y entrega continua en **GitHub Actions** hacia la plataforma cloud **Render**, asegurando un entorno escalable y portable.
+La arquitectura técnica de la plataforma aprovecha las ventajas de un entorno contenerizado y desacoplado, donde el frontend desarrollado en **Next.js con Tailwind CSS** consume servicios a través de un **API Gateway** centralizado, el cual orquesta la comunicación HTTP REST entre cuatro microservicios independientes (**autenticación, restaurantes, órdenes y notificaciones**) construidos en **NestJS con Prisma ORM** y autenticación basada en **JWT**. La persistencia de datos se gestiona mediante **PostgreSQL** (Supabase), mientras que el ecosistema se despliega de forma automatizada a través de un pipeline de integración y entrega continua en **GitHub Actions** hacia la plataforma cloud **Microsoft Azure** (Azure Container Registry + Azure Container Apps), asegurando un entorno escalable y portable. Despliegue en producción: `https://ca-frontend.braveground-047a1b6e.eastus2.azurecontainerapps.io`.
 
 ---
 
@@ -46,7 +46,7 @@ Para el desarrollo e integración de esta solución de TI, se han seleccionado l
 2. **Contenedores (Docker):** Contenerización completa de la arquitectura utilizando un Dockerfile optimizado por cada microservicio (`auth-service`, `restaurant-service`, `order-service`, `notification-service` y `gateway`) y uno adicional para el frontend Next.js, gestionando la orquestación local y la configuración de redes aisladas entre servicios mediante Docker Compose.
 3. **Orquestación (Kubernetes):** Implementación de manifiestos Kubernetes (Deployments, Services e Ingress) ejecutados localmente mediante Minikube o kind, permitiendo orquestar y administrar el conjunto de microservicios en un entorno reproducible basado en contenedores.
 4. **DevOps / CI-CD:** Automatización del flujo de integración y entrega continua mediante GitHub Actions, configurando pipelines para instalación de dependencias, validación de compilación, construcción de imágenes Docker y despliegue automatizado hacia el entorno cloud conectado al repositorio principal.
-5. **Cloud Computing:** Despliegue de la aplicación en producción utilizando un modelo PaaS (Platform as a Service) a través de la plataforma Render. Se configurarán Web Services independientes que compilarán los contenedores automáticamente desde GitHub, gestionando variables de entorno seguras y proveyendo certificados SSL (HTTPS) nativos para todas las comunicaciones.
+5. **Cloud Computing:** Despliegue de la aplicación en producción sobre **Microsoft Azure**, usando **Azure Container Registry (ACR)** para almacenar las imágenes Docker y **Azure Container Apps (CaaS)** para ejecutar cada servicio de forma independiente y escalable. Las imágenes se construyen automáticamente desde GitHub Actions, gestionando variables de entorno seguras y proveyendo certificados SSL (HTTPS) nativos para todas las comunicaciones.
 
 ---
 
@@ -141,6 +141,6 @@ npm run start:dev
 * [ ] Implementación de la lógica de negocio transaccional en `order-service`.
 * [ ] Configuración del sistema de alertas asíncronas en `notification-service`.
 * [ ] Diseño de manifiestos y orquestación local con Kubernetes.
-* [ ] Automatización e integración del pipeline CI/CD en GitHub Actions hacia Render.
+* [ ] Automatización e integración del pipeline CI/CD en GitHub Actions hacia Azure.
 
 ```

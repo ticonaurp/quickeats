@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  namespace: quickeats
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: order-service
+  template:
+    metadata:
+      labels:
+        app: order-service
+    spec:
+      containers:
+        - name: order-service
+          image: quickeats-order-service:latest
+          imagePullPolicy: IfNotPresent
+          # OJO: este servicio compila en dist/src/main.js (no dist/main.js).
+          command: ["node", "dist/src/main.js"]
+          ports:
+            - containerPort: 3004
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: quickeats-secrets
+                  key: DATABASE_URL_ORDER
+            - name: NOTIFICATION_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: quickeats-config
+                  key: NOTIFICATION_SERVICE_URL
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+  namespace: quickeats
+spec:
+  selector:
+    app: order-service
+  ports:
+    - port: 3004
+      targetPort: 3004
+  type: ClusterIP

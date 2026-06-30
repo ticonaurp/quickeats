@@ -708,4 +708,56 @@ Un módulo de **"Perfil"** (editar nombre, dirección por defecto, cambiar contr
 
 ---
 
-*Parte I: auditoría de solo lectura. Parte II: correcciones de integración sobre archivos fuente. Parte III: diagnóstico en runtime sobre Docker y fix definitivo del 500 (TLS Supabase), verificado con los contenedores en ejecución. Parte IV: frontend (sesión real, limpieza de landing y Panel de Admin con datos reales del sistema). Parte V: flujo "Restaurantes" del panel admin (imágenes 404, lógica de apertura/toggle, payload de edición, datos falsos y polling). Parte VI: flujo "Productos" del panel admin (imágenes con fallback/preview, select de categoría robusto; backend CRUD verificado). Parte VII: unificación de categorías (BD + catálogo único), borrado de restaurantes de prueba y estética mango en los formularios de producto. Parte VIII: flujo "Pedidos" del panel admin (bugs de className/Mango Engine/error muerto/mounted, + rediseño profesional con tarjetas resumen, método de pago y estado con color). Parte IX: métrica de ingresos coherente (excluye cancelados = S/732) y Sidebar del admin colapsable (menú hamburguesa con iconos, persistente y sin parpadeo). Parte X: flujo de pedido del cliente (carga robusta de `/user`, badge de universidad, umbral de entrega rápida ≤25 min, navbar en Mis Pedidos e identidad naranja en todo el recorrido). Parte XI: ajustes finos del flujo cliente (navbar con enlace activo, notificaciones rediseñadas, fallback de imágenes de platos, validaciones de tarjeta, eliminación del banner y flechas en categorías). Parte XII: landing y login con copy realista (sin buzzwords de IA), destacados detrás de registro y limpieza de textos técnicos. Parte XIII: identidad naranja en login/registro y limpieza de textos demo + stats infladas de la landing. Parte XIV: estado integral del proyecto (microservicios, flujos completos, cómo funcionan las imágenes, tópicos/buenas prácticas, pendientes y la duda de perfiles); borrado de `pruebas1`.*
+---
+
+# PARTE XV — Cloud definido (Azure) y plan de Kubernetes (2026-06-29)
+
+## A. ☁️ Cloud: decisión final = Microsoft Azure (ya no Render)
+El equipo confirmó que el despliegue es en **Azure** (no Render). Se actualizó el **`README.md`**:
+- Descripción: "…hacia la plataforma cloud **Microsoft Azure** (ACR + Azure Container Apps)…" con la URL de producción `https://ca-frontend.braveground-047a1b6e.eastus2.azurecontainerapps.io`.
+- Tópico 5 (Cloud Computing): reescrito a **Azure Container Registry + Azure Container Apps**.
+- Roadmap CI/CD: "hacia **Azure**".
+> Queda **resuelta** la discrepancia "Render vs Azure" que marcaba la Parte I §6. *(Las menciones a "Render" que quedan en el código son solo comentarios de fallback de URLs, inofensivos.)*
+
+## B. ☸️ Kubernetes: plan de implementación (pendiente de ejecutar)
+**Aclaración importante:** Kubernetes **no es un microservicio**, es el tópico de **orquestación**. Ejecuta **las mismas 6 imágenes** (frontend, gateway, auth, restaurant, order, notification) en un clúster local (Minikube). **No modifica el código existente**: solo se agrega una carpeta nueva `k8s/` con manifiestos YAML, así que **no rompe nada** de lo ya implementado.
+
+**Arquitectura en K8s:** cada servicio = un `Deployment` + un `Service`. Frontend y Gateway se exponen al exterior con un `Ingress`. Las variables sensibles (DATABASE_URL, JWT_SECRET) van en un `Secret`; las URLs internas en un `ConfigMap`. Dentro del clúster los servicios se ven por nombre de Service (ej. `http://auth-service:3002`), igual que en Docker Compose.
+
+**Manifiestos creados** en la carpeta **`k8s/`** (clúster local = Docker Desktop / kubeadm): `00-namespace`, `01-secret`, `02-configmap`, `auth`, `restaurant`, `order`, `notification` (Deployment+Service ClusterIP), `gateway` y `frontend` (Deployment+Service LoadBalancer → `localhost:3001`/`localhost:3000`), `ingress` y un `README.md` con la guía. Reutiliza las 5 imágenes del backend ya construidas; solo se construye la imagen del frontend (`quickeats-frontend:latest`). Detalle clave: las imágenes de auth/restaurant/order/notification son la etapa *builder* (sin CMD), por eso cada Deployment indica el `command` de arranque, y **order/notification** arrancan en `dist/src/main.js` (los demás en `dist/main.js`).
+
+**✅ Desplegado y verificado en runtime:** `kubectl apply -f k8s/` levantó los **6 pods en `Running` (1/1, 0 restarts)**. Prueba end-to-end contra el clúster: la landing carga en `http://localhost:3000`, `GET http://localhost:3001/restaurants` → **200** (gateway→restaurant-service→Supabase) y `POST /auth/login` → **401** (gateway→auth-service). El tópico de **Orquestación (Kubernetes)** queda **cumplido y funcionando**.
+
+### Estado final de los 5 tópicos
+| Tópico | Estado |
+|---|---|
+| Git / GitFlow | ✅ |
+| Docker | ✅ |
+| **Kubernetes** | ✅ (carpeta `k8s/`, 6 pods Running, verificado) |
+| CI/CD (GitHub Actions) | ✅ (`.github/workflows/ci-cd.yml`) |
+| Cloud (Azure) | ✅ (ACR + Container Apps; README alineado a Azure) |
+
+---
+
+---
+
+# PARTE XVI — Limpieza de archivos basura / no usados (2026-06-29)
+
+Se eliminaron archivos huérfanos o boilerplate, **verificando antes con `grep` que ninguno se importa ni afecta a los microservicios** (cero referencias rotas tras el borrado):
+
+| Archivo borrado | Por qué |
+|---|---|
+| `fix-tailwind.sh` | Script de un solo uso (migración de clases Tailwind ya aplicada). |
+| `sync.sh` | Helper para copiar `node_modules` desde Docker; superado por `install-all.sh` / npm local. |
+| `frontend/app/products/` (page.tsx) | **Ruta huérfana y rota**: usaba el campo viejo `imageUrl` y redirigía a `/checkout` (ruta inexistente; el pago real es `/pago`). Nada enlazaba a `/products`. |
+| `frontend/app/components/home/HowItWorksBanner.tsx` | Componente huérfano (se quitó su uso de `/user` en la Parte XI; ya no se importaba). |
+| `frontend/README.md` | Boilerplate de `create-next-app`. |
+| `gateway/README.md`, `auth-service/README.md`, `restaurant-service/README.md`, `order-service/README.md`, `notification-service/README.md` | Boilerplate genérico de NestJS ("Nest framework TypeScript starter"). |
+| `frontend/AGENTS.md` | Texto engañoso ("This is NOT the Next.js you know…"), sin valor para el proyecto. |
+| `frontend/CLAUDE.md`, `auth-service/CLAUDE.md` | Duplicados de las reglas del `CLAUDE.md` raíz. |
+
+**Se conservaron** (en uso o pedidos): `install-all.sh`, `k8s/README.md`, y los `.md` principales (`README.md`, `CLAUDE.md`, `AUDITORIA-QUICKEATS.md`). No se tocó código de microservicios, tests scaffold, ni `mockData.ts`/`supabase.ts` (sí usados).
+
+---
+
+*Parte I: auditoría de solo lectura. Parte II: correcciones de integración sobre archivos fuente. Parte III: diagnóstico en runtime sobre Docker y fix definitivo del 500 (TLS Supabase), verificado con los contenedores en ejecución. Parte IV: frontend (sesión real, limpieza de landing y Panel de Admin con datos reales del sistema). Parte V: flujo "Restaurantes" del panel admin (imágenes 404, lógica de apertura/toggle, payload de edición, datos falsos y polling). Parte VI: flujo "Productos" del panel admin (imágenes con fallback/preview, select de categoría robusto; backend CRUD verificado). Parte VII: unificación de categorías (BD + catálogo único), borrado de restaurantes de prueba y estética mango en los formularios de producto. Parte VIII: flujo "Pedidos" del panel admin (bugs de className/Mango Engine/error muerto/mounted, + rediseño profesional con tarjetas resumen, método de pago y estado con color). Parte IX: métrica de ingresos coherente (excluye cancelados = S/732) y Sidebar del admin colapsable (menú hamburguesa con iconos, persistente y sin parpadeo). Parte X: flujo de pedido del cliente (carga robusta de `/user`, badge de universidad, umbral de entrega rápida ≤25 min, navbar en Mis Pedidos e identidad naranja en todo el recorrido). Parte XI: ajustes finos del flujo cliente (navbar con enlace activo, notificaciones rediseñadas, fallback de imágenes de platos, validaciones de tarjeta, eliminación del banner y flechas en categorías). Parte XII: landing y login con copy realista (sin buzzwords de IA), destacados detrás de registro y limpieza de textos técnicos. Parte XIII: identidad naranja en login/registro y limpieza de textos demo + stats infladas de la landing. Parte XIV: estado integral del proyecto (microservicios, flujos completos, cómo funcionan las imágenes, tópicos/buenas prácticas, pendientes y la duda de perfiles); borrado de `pruebas1`. Parte XV: cloud definido en Azure (README actualizado) y plan de Kubernetes. Parte XVI: limpieza de archivos basura/no usados (scripts de un solo uso, ruta huérfana, boilerplate y .md redundantes).*

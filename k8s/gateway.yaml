@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: quickeats
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      labels:
+        app: gateway
+    spec:
+      containers:
+        - name: gateway
+          image: quickeats-gateway:latest
+          imagePullPolicy: IfNotPresent
+          # La imagen del gateway SÍ trae su CMD (node dist/main.js), no hace falta override.
+          ports:
+            - containerPort: 3001
+          env:
+            - name: AUTH_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: quickeats-config
+                  key: AUTH_SERVICE_URL
+            - name: RESTAURANT_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: quickeats-config
+                  key: RESTAURANT_SERVICE_URL
+            - name: ORDER_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: quickeats-config
+                  key: ORDER_SERVICE_URL
+            - name: NOTIFICATION_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: quickeats-config
+                  key: NOTIFICATION_SERVICE_URL
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway
+  namespace: quickeats
+spec:
+  selector:
+    app: gateway
+  ports:
+    - port: 3001
+      targetPort: 3001
+  # LoadBalancer → en Docker Desktop queda accesible en http://localhost:3001 (lo usa el navegador).
+  type: LoadBalancer
