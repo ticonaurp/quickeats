@@ -317,10 +317,13 @@ export default function Home() {
                   >
                     <div className="relative h-52 w-full bg-slate-100 overflow-hidden">
                       <img 
-                        src={imageSrc} 
+                        src={imageSrc}
                         alt={restaurant.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                         loading="lazy"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=500&q=80';
+                        }}
                       />
                       
                       <div className="absolute inset-0 bg-linear-to-t from-slate-900/40 via-transparent to-transparent opacity-60" />

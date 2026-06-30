@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, SlidersHorizontal, UtensilsCrossed, ChevronLeft, ChevronRight } from 'lucide-react';
 import { LOCAL_CATEGORIES, Restaurant } from '../data/mockData';
-import { supabase } from '../services/supabase';
+import { supabase, isSupabaseConfigured } from '../services/supabase';
 import TopNavbar from '../components/TopNavbar';
 import RestaurantCard from '../components/shared/RestaurantCard';
 import ExpressDeliveryCarousel from '../components/home/ExpressDeliveryCarousel';
@@ -68,7 +68,8 @@ export default function UserPage() {
 
   // ⚡ 2. ESCUCHA REALTIME EFICIENTE VÍA SUPABASE
   useEffect(() => {
-    if (!supabase) return;
+    // Solo conectamos el WebSocket si hay credenciales reales (evita errores con el placeholder del build).
+    if (!isSupabaseConfigured) return;
 
     const channel = supabase
       .channel('schema-db-changes')
