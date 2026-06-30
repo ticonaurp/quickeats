@@ -19,3 +19,6 @@ out/
 # Sistema
 .DS_Store
 Thumbs.db
+
+# Documentación interna (no se sube al repo)
+AUDITORIA-QUICKEATS.md

@@ -1,9 +1,7 @@
-
-
 # QuickEats — Cloud-Native Delivery Platform 🚀
 
-**Universidad Ricardo Palma**  
-**Facultad de Ingeniería**  
+**Universidad Ricardo Palma**
+**Facultad de Ingeniería**
 **Escuela Profesional de Ingeniería Informática**
 
 ---
@@ -19,7 +17,7 @@
 
 ## 📝 Descripción Breve del Proyecto
 
-La solución propuesta consiste en **QuickEats**, una mini plataforma de delivery inspirada en aplicaciones como Uber Eats, diseñada bajo un enfoque de arquitectura distribuida basada en microservicios. El proyecto busca aplicar de manera integrada los principios de desarrollo cloud-native, automatización de despliegues y separación de responsabilidades en servicios independientes, replicando un caso de uso realista del sector gastronomómico digital. Los usuarios finales podrán registrarse, autenticarse, explorar restaurantes con sus respectivos menús y generar órdenes de pedido.
+La solución propuesta consiste en **QuickEats**, una mini plataforma de delivery inspirada en aplicaciones como Uber Eats, diseñada bajo un enfoque de arquitectura distribuida basada en microservicios. El proyecto busca aplicar de manera integrada los principios de desarrollo cloud-native, automatización de despliegues y separación de responsabilidades en servicios independientes, replicando un caso de uso realista del sector gastronómico digital. Los usuarios finales podrán registrarse, autenticarse, explorar restaurantes con sus respectivos menús y generar órdenes de pedido.
 
 La arquitectura técnica de la plataforma aprovecha las ventajas de un entorno contenerizado y desacoplado, donde el frontend desarrollado en **Next.js con Tailwind CSS** consume servicios a través de un **API Gateway** centralizado, el cual orquesta la comunicación HTTP REST entre cuatro microservicios independientes (**autenticación, restaurantes, órdenes y notificaciones**) construidos en **NestJS con Prisma ORM** y autenticación basada en **JWT**. La persistencia de datos se gestiona mediante **PostgreSQL** (Supabase), mientras que el ecosistema se despliega de forma automatizada a través de un pipeline de integración y entrega continua en **GitHub Actions** hacia la plataforma cloud **Microsoft Azure** (Azure Container Registry + Azure Container Apps), asegurando un entorno escalable y portable. Despliegue en producción: `https://ca-frontend.braveground-047a1b6e.eastus2.azurecontainerapps.io`.
 
@@ -27,14 +25,31 @@ La arquitectura técnica de la plataforma aprovecha las ventajas de un entorno c
 
 ## 📐 Arquitectura del Sistema
 
-La plataforma centraliza el flujo de peticiones de los clientes a través de un API Gateway unificado, distribuyendo la carga lógica y el almacenamiento de la siguiente manera:
+El frontend habla **únicamente con el Gateway**, y el Gateway reenvía cada petición al microservicio correspondiente por su DNS interno. La única comunicación servicio-a-servicio es: al crear una orden, `order-service` notifica a `notification-service`.
 
-* **`frontend` (Next.js / TypeScript):** Interfaz de usuario interactiva y optimizada para la autenticación, exploración del catálogo de restaurantes y gestión de pedidos.
-* **`gateway` (NestJS - Puerto 3001):** Puerta de entrada única (Reverse Proxy) que valida el tráfico, unifica las rutas públicas y redirige las peticiones internamente a los microservicios correspondientes.
-* **`auth-service` (NestJS):** Servicio encargado del registro de usuarios, control de accesos y emisión/validación de tokens JWT.
-* **`restaurant-service` (NestJS - Puerto 3003):** Microservicio dedicado a la administración del catálogo de restaurantes y sus respectivos menús/productos utilizando Prisma 7.
-* **`order-service` (NestJS):** Orquestador de las órdenes de compra, vinculando a los usuarios con los productos seleccionados.
-* **`notification-service` (NestJS):** Sistema encargado del envío de alertas y notificaciones sobre el estado de los pedidos.
+| Componente | Puerto | Stack | Responsabilidad |
+|---|---|---|---|
+| `frontend` | 3000 | Next.js / React / Tailwind | UI: landing, registro/login, catálogo, carrito, pago, "Mis Pedidos" y panel de admin. |
+| `gateway` | 3001 | NestJS | Puerta de entrada única (reverse proxy); enruta a los microservicios. |
+| `auth-service` | 3002 | NestJS + Prisma + JWT | Registro, login, emisión/validación de tokens (bcrypt + JWT). |
+| `restaurant-service` | 3003 | NestJS + Prisma | Catálogo de **restaurantes y productos** (menús). |
+| `order-service` | 3004 | NestJS + Prisma | Creación y seguimiento de **órdenes**; avisa al notification-service. |
+| `notification-service` | 3005 | NestJS + Prisma | **Notificaciones** del usuario (p. ej. "orden creada"). |
+
+**Persistencia:** PostgreSQL en **Supabase** (compartido por los microservicios, cada uno con su propio esquema/tablas).
+
+---
+
+## 🧰 Stack Tecnológico
+
+* **Frontend:** Next.js + React + TypeScript + Tailwind CSS
+* **Backend (microservicios):** NestJS + TypeScript + Prisma ORM (driver `pg`)
+* **Autenticación:** JWT + bcrypt
+* **Base de datos:** PostgreSQL (Supabase)
+* **Contenedores:** Docker + Docker Compose
+* **Orquestación:** Kubernetes (manifiestos en `k8s/`, probado en Docker Desktop)
+* **CI/CD:** GitHub Actions
+* **Cloud:** Microsoft Azure (Azure Container Registry + Azure Container Apps)
 
 ---
 
@@ -50,97 +65,123 @@ Para el desarrollo e integración de esta solución de TI, se han seleccionado l
 
 ---
 
-## 🚀 Guía de Inicio Rápido (Entorno Local)
+## ⚙️ Cómo levantar el proyecto en una PC nueva
 
-### 1. Prerrequisitos
-Asegúrate de tener instalado en tu máquina:
-* Node.js (v18 o superior)
-* Docker & Docker Compose
-* Git
+> La base de datos está en **Supabase (la nube)**: **no** hay que instalar PostgreSQL.
 
-### 2. Clonar el Repositorio
+### 0. Prerrequisitos
+* **Node.js 20**
+* **Git** (en Windows incluye **Git Bash**, necesario para el script de instalación)
+* **Docker Desktop** (solo si se usará la Opción B o Kubernetes)
+
+### 1. Clonar el repositorio
 ```bash
 git clone https://github.com/ticonaurp/quickeats.git
 cd quickeats
-
+git checkout develop   # rama con la versión más reciente
 ```
 
-### 3. Levantar la Infraestructura Base (PostgreSQL)
+### 2. Crear los archivos `.env` (OBLIGATORIO — no vienen en el repo)
+Crea estos **6 archivos**, cada uno en su carpeta, con este contenido exacto:
 
-Inicia el contenedor de base de datos ejecutando el archivo `docker-compose.yml` en la raíz:
-
-```bash
-docker compose up -d
-
+**`frontend/.env`**
+```
+NEXT_PUBLIC_SUPABASE_URL=https://nbtsxxhnsjhplwvqjtwu.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_bbvDdAVajwIIUTb4kxizrA_54XDJCZi
+NEXT_PUBLIC_API_URL=http://127.0.0.1:3001
 ```
 
-### 4. Inicializar el Microservicio de Restaurantes (`restaurant-service`)
-
-Navega a la carpeta del servicio, instala las dependencias y corre las migraciones de Prisma 7 para mapear el esquema relacional en PostgreSQL:
-
-```bash
-cd restaurant-service
-npm install
-npx prisma db push
-npm run start:dev
-
+**`gateway/.env`**
+```
+AUTH_SERVICE_URL=http://auth-service:3002
+RESTAURANT_SERVICE_URL=http://restaurant-service:3003
+ORDER_SERVICE_URL=http://order-service:3004
+NOTIFICATION_SERVICE_URL=http://notification-service:3005
 ```
 
-### 5. Inicializar el API Gateway (`gateway`)
-
-En una terminal paralela, levanta la pasarela de entrada (Puerto 3001) para comenzar a redirigir el tráfico:
-
-```bash
-cd gateway
-npm install
-npm run start:dev
-
+**`auth-service/.env`**
 ```
+JWT_SECRET=quickeats_jwt_2026_4f8b1c9d2e7a6f30b5c4d8e1a9f2c7b6
+DATABASE_URL=postgresql://postgres.nbtsxxhnsjhplwvqjtwu:quickeats2026@aws-1-sa-east-1.pooler.supabase.com:5432/postgres?schema=public
+DIRECT_URL=postgresql://postgres.nbtsxxhnsjhplwvqjtwu:quickeats2026@aws-1-sa-east-1.pooler.supabase.com:5432/postgres?schema=public
+```
+
+**`restaurant-service/.env`**
+```
+DATABASE_URL="postgresql://postgres.nbtsxxhnsjhplwvqjtwu:quickeats2026@aws-1-sa-east-1.pooler.supabase.com:5432/postgres?schema=public"
+DIRECT_URL="postgresql://postgres.nbtsxxhnsjhplwvqjtwu:quickeats2026@aws-1-sa-east-1.pooler.supabase.com:5432/postgres?schema=public"
+```
+
+**`order-service/.env`**
+```
+DATABASE_URL="postgresql://postgres.nbtsxxhnsjhplwvqjtwu:quickeats2026@aws-1-sa-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1&schema=public"
+DIRECT_URL="postgresql://postgres.nbtsxxhnsjhplwvqjtwu:quickeats2026@aws-1-sa-east-1.pooler.supabase.com:5432/postgres?schema=public"
+```
+
+**`notification-service/.env`**
+```
+DATABASE_URL="postgresql://postgres.nbtsxxhnsjhplwvqjtwu:quickeats2026@aws-1-sa-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1&schema=public"
+DIRECT_URL="postgresql://postgres.nbtsxxhnsjhplwvqjtwu:quickeats2026@aws-1-sa-east-1.pooler.supabase.com:5432/postgres?schema=public"
+```
+
+> Los certificados `supabase-ca.crt` **sí vienen** en el repo. No se versionan los `.env` por seguridad; en producción estas variables van como secretos en Azure.
 
 ---
 
-## 🛣️ Endpoints Disponibles a través del Gateway (Puerto 3001)
+### Opción A — Local con un solo comando (recomendada, más liviana)
+```bash
+# 1) Instalar dependencias + generar Prisma en los 6 proyectos (en Git Bash)
+bash install-all.sh
 
-### 🍔 Módulo de Restaurantes
+# 2) Instalar la herramienta que levanta todo junto (concurrently)
+npm install
 
-* `GET /restaurants` - Recupera todos los restaurantes registrados junto con su lista de productos asociados (`include: { products: true }`).
-* `POST /restaurants` - Registra un nuevo establecimiento en la plataforma.
-
-```json
-{
-  "name": "Pizza Planet",
-  "description": "Comida rápida intergaláctica"
-}
-
+# 3) Levantar los 6 servicios en una sola terminal
+npm run start:all
 ```
+Abrir **http://localhost:3000**. Para apagar todo: `Ctrl + C`.
 
-### 🍕 Módulo de Productos
+### Opción B — Con Docker (microservicios en contenedores)
+```bash
+# Levanta los 5 microservicios del backend (Gateway 3001 + auth/restaurant/order/notification)
+docker compose up -d --build
 
-* `GET /products` - Lista el catálogo global de productos disponibles en el sistema.
-* `POST /products` - Agrega un platillo al menú de un restaurante específico mapeando su ID correspondiente.
-
-```json
-{
-  "name": "Pizza Pepperoni Familiar",
-  "description": "Grande con extra queso",
-  "price": 45.9,
-  "restaurantId": "UUID_DEL_RESTAURANTE"
-}
-
+# En otra terminal, levantar el frontend
+cd frontend && npm install && npm run dev
 ```
+Abrir **http://localhost:3000**. Para apagar el backend: `docker compose down`.
+
+### Opción C — Kubernetes (orquestación)
+Ver la guía detallada en **[`k8s/README.md`](./k8s/README.md)** (Docker Desktop con Kubernetes habilitado → `kubectl apply -f k8s/`).
 
 ---
 
-## 📈 Roadmap y Avance del Proyecto
+### Credenciales de prueba
+| Rol | Email | Contraseña |
+|---|---|---|
+| Administrador | `topicos2@gmail.com` | `Prueba12345` |
+| Usuario | `topicos1@gmail.com` | `Prueba12345` |
 
-* [x] Documentación inicial, delimitación de la arquitectura y definición de integrantes.
-* [x] Contenerización y configuración de la Base de Datos relacional PostgreSQL.
-* [x] Desarrollo del microservicio central `restaurant-service` integrado con Prisma 7 y `PrismaPg`.
-* [x] Implementación del Proxy Inverso en el `gateway` (Enrutamiento del Puerto 3001 ➡️ 3003).
-* [ ] Conexión de la interfaz web `frontend` (Next.js) para Login y catálogo dinámico.
-* [ ] Implementación de la lógica de negocio transaccional en `order-service`.
-* [ ] Configuración del sistema de alertas asíncronas en `notification-service`.
-* [ ] Diseño de manifiestos y orquestación local con Kubernetes.
-* [ ] Automatización e integración del pipeline CI/CD en GitHub Actions hacia Azure.
+---
 
-```
+## 🛣️ Endpoints principales (a través del Gateway, puerto 3001)
+
+| Módulo | Método y ruta | Descripción |
+|---|---|---|
+| Auth | `POST /auth/register` · `POST /auth/login` | Registro y login (devuelve JWT). |
+| Restaurantes | `GET /restaurants` · `POST /restaurants` · `PATCH /restaurants/:id` | Listar, crear y editar restaurantes. |
+| Productos | `GET /products` · `POST /products` · `PUT /products/:id` · `DELETE /products/:id` | CRUD de productos (filtrable por `?restaurantId=`). |
+| Órdenes | `POST /orders` · `GET /orders` · `GET /orders/user/:id` · `PATCH /orders/:id/status` | Crear orden, historial y cambio de estado. |
+| Notificaciones | `GET /notifications/:userId` · `POST /notifications` · `PATCH /notifications/:id/read` | Avisos del usuario. |
+
+---
+
+## ✅ Estado del proyecto (tópicos cumplidos)
+
+| Tópico | Estado |
+|---|---|
+| Control de versiones (Git / GitFlow) | ✅ |
+| Contenedores (Docker + Docker Compose) | ✅ |
+| Orquestación (Kubernetes — `k8s/`) | ✅ |
+| DevOps / CI-CD (GitHub Actions) | ✅ |
+| Cloud Computing (Azure ACR + Container Apps) | ✅ |
