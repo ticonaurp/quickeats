@@ -8,6 +8,7 @@ import { supabase, isSupabaseConfigured } from '../services/supabase';
 import TopNavbar from '../components/TopNavbar';
 import RestaurantCard from '../components/shared/RestaurantCard';
 import ExpressDeliveryCarousel from '../components/home/ExpressDeliveryCarousel';
+import AiChatbot from '../components/AiChatbot';
 
 export default function UserPage() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
@@ -343,6 +344,8 @@ export default function UserPage() {
         )}
 
       </div>
+      {/* 🔮 AGENTE DE INTELIGENCIA ARTIFICIAL FLOTANTE */}
+      <AiChatbot />
     </div>
   );
 }
