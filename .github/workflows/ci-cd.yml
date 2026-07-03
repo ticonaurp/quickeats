@@ -58,7 +58,7 @@ jobs:
       - name: Construir y Subir Frontend
         run: |
           docker build \
-            --build-arg NEXT_PUBLIC_API_URL="https://ca-gateway.braveground-047a1b6e.eastus2.azurecontainerapps.io" \
+            --build-arg NEXT_PUBLIC_API_URL="https://ca-gateway-prod.braveground-047a1b6e.eastus2.azurecontainerapps.io" \
             --build-arg NEXT_PUBLIC_GOOGLE_MAPS_API_KEY="${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}" \
             -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/frontend:latest ./frontend
           docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/frontend:latest
