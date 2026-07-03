@@ -15,7 +15,7 @@ QuickEats is a microservices-based application built with NestJS (backend) and N
 
 ## AI Chatbot Feature Specifications
 We are implementing an **Interactive AI Agent (Function Calling)** embedded into the API Gateway under the route `POST /ai/chat`.
-- **Target Model**: `gemini-2.5-flash` via `@google/generative-ai` (the `gemini-1.5-flash` line was fully retired by Google; do not revert to it).
+- **Target Model**: `llama-3.1-8b-instant` via Groq (OpenAI-compatible client, `baseURL: https://api.groq.com/openai/v1`, `GROQ_API_KEY`). We migrated off Gemini — `@google/generative-ai` may still linger as an unused dependency in `gateway/package.json`, but it is not what powers the chatbot; do not build against it.
 - **Expected Tools**:
   1. `get_order_status(orderId: string)` -> Fetches from Order Service.
   2. `add_product_to_cart(productName: string, quantity: number)` -> Searches Restaurant Service for valid IDs and returns an action payload (`{ type: 'action', action: 'ADD_TO_CART', payload }`) to the frontend.
