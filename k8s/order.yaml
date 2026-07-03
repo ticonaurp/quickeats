@@ -32,6 +32,11 @@ spec:
                 configMapKeyRef:
                   name: quickeats-config
                   key: NOTIFICATION_SERVICE_URL
+            - name: RESTAURANT_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: quickeats-config
+                  key: RESTAURANT_SERVICE_URL
 ---
 apiVersion: v1
 kind: Service
