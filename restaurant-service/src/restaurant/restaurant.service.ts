@@ -8,14 +8,28 @@ export class RestaurantService {
 
   // 🕒 FUNCIÓN MAESTRA INTEGRAL: Calcula la apertura soportando textos ("Domingo") y números (7)
   private checkIsOpen(restaurant: any): boolean {
-    const ahora = new Date();
-    
-    // 1. Minutos actuales en Lima (Ej: 21:41 -> 21 * 60 + 41 = 1301 minutos)
-    const minutosActuales = ahora.getHours() * 60 + ahora.getMinutes();
+    // 🌎 Los contenedores (Docker/Azure) corren en UTC, no en hora de Lima.
+    // Usar new Date().getHours()/getDay() ahí toma la hora del SO del contenedor,
+    // no la de Perú, lo que marca restaurantes cerrados/abiertos incorrectamente.
+    // Por eso calculamos la hora y el día SIEMPRE en la zona horaria 'America/Lima'.
+    const limaParts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Lima',
+      weekday: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    }).formatToParts(new Date());
 
-    // 2. Controlar el índice del día
-    let diaActual = ahora.getDay();
-    if (diaActual === 0) diaActual = 7; // Domingo es 7
+    const getPart = (type: string) => limaParts.find((p) => p.type === type)?.value ?? '';
+
+    // 1. Minutos actuales en Lima (Ej: 21:41 -> 21 * 60 + 41 = 1301 minutos)
+    const minutosActuales = parseInt(getPart('hour'), 10) * 60 + parseInt(getPart('minute'), 10);
+
+    // 2. Controlar el índice del día a partir del weekday en inglés que devuelve Intl (Mon, Tue, ...)
+    const weekdayToIndex: { [key: string]: number } = {
+      MON: 1, TUE: 2, WED: 3, THU: 4, FRI: 5, SAT: 6, SUN: 7,
+    };
+    const diaActual = weekdayToIndex[getPart('weekday').toUpperCase()] ?? 1;
 
     // 🎯 MATCHER DE DÍAS: Mapeamos todas las formas posibles en las que se pudo guardar "Domingo"
     const dicDias: { [key: number]: string[] } = {
