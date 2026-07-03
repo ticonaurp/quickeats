@@ -6,6 +6,7 @@
     "start:all:light": "concurrently -k -n GATEWAY,AUTH,REST,ORDER,NOTIF,WEB -c blue,green,magenta,yellow,cyan,white \"npm --prefix gateway run start\" \"npm --prefix auth-service run start\" \"npm --prefix restaurant-service run start\" \"npm --prefix order-service run start\" \"npm --prefix notification-service run start\" \"npm --prefix frontend run dev\""
   },
   "dependencies": {
+    "openai": "^6.45.0",
     "typescript": "^6.0.3"
   },
   "devDependencies": {

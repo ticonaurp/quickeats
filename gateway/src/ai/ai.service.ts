@@ -3,12 +3,7 @@ import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import {
-  ChatSession,
-  FunctionDeclarationsTool,
-  GoogleGenerativeAI,
-  SchemaType,
-} from '@google/generative-ai';
+import OpenAI from 'openai';
 import { ChatRequestDto } from './dto/chat.dto';
 import {
   AddProductToCartArgs,
@@ -17,133 +12,145 @@ import {
   GetOrderStatusArgs,
   OrderStatusServiceResponse,
   ProductServiceItem,
+  RestaurantServiceItem,
 } from './interfaces/ai-response.interface';
 
 @Injectable()
 export class AiService {
   private readonly logger = new Logger(AiService.name);
-  private readonly genAI: GoogleGenerativeAI;
+  private readonly openai: OpenAI;
 
-  // 🟢 En Docker/Render se inyectan las URLs de los microservicios; en local caen a localhost.
+  // 🟢 URLs inyectadas para entornos Docker/K8s o locales
   private readonly orderServiceUrl = `${process.env.ORDER_SERVICE_URL || 'http://localhost:3004'}/orders`;
-  private readonly restaurantServiceUrl = `${process.env.RESTAURANT_SERVICE_URL || 'http://localhost:3003'}/products`;
+  private readonly restaurantServiceBaseUrl = process.env.RESTAURANT_SERVICE_URL || 'http://localhost:3003';
+  private readonly restaurantServiceUrl = `${this.restaurantServiceBaseUrl}/products`;
 
-  private readonly tools: FunctionDeclarationsTool[] = [
+  // 🛠️ Definición de herramientas en formato OpenAI / Groq
+  private readonly tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     {
-      functionDeclarations: [
-        {
-          name: 'get_order_status',
-          description:
-            'Obtiene el estado actual (ej. PENDING, PREPARING) y el restaurante de una orden específica del usuario.',
-          parameters: {
-            type: SchemaType.OBJECT,
-            properties: {
-              orderId: {
-                type: SchemaType.STRING,
-                description:
-                  'El identificador de la orden a consultar. Puede ser el UUID completo o el código corto de 8 caracteres que el usuario ve en pantalla (ej. "9E6A6404" o "#9E6A6404").',
-              },
+      type: 'function',
+      function: {
+        name: 'get_order_status',
+        description: 'Obtiene el estado actual (ej. PENDING, PREPARING) y el restaurante de una orden específica del usuario.',
+        parameters: {
+          type: 'object',
+          properties: {
+            orderId: {
+              type: 'string',
+              description: 'El identificador de la orden a consultar. Puede ser el UUID completo o el código corto de 8 caracteres que el usuario ve en pantalla (ej. "9E6A6404" o "#9E6A6404").',
             },
-            required: ['orderId'],
           },
+          required: ['orderId'],
         },
-        {
-          name: 'add_product_to_cart',
-          description:
-            'Busca un producto por nombre en el catálogo del restaurante y prepara la acción para agregarlo al carrito del cliente.',
-          parameters: {
-            type: SchemaType.OBJECT,
-            properties: {
-              productName: {
-                type: SchemaType.STRING,
-                description: 'Nombre o descripción aproximada del producto que el usuario quiere agregar.',
-              },
-              quantity: {
-                type: SchemaType.NUMBER,
-                description: 'Cantidad de unidades del producto a agregar. Si el usuario no la menciona, usa 1.',
-              },
+      },
+    },
+    {
+      type: 'function',
+      function: {
+        name: 'add_product_to_cart',
+        description: 'Busca un producto por nombre en el catálogo del restaurante y prepara la acción para agregarlo al carrito del cliente.',
+        parameters: {
+          type: 'object',
+          properties: {
+            productName: {
+              type: 'string',
+              description: 'Nombre o descripción aproximada del producto que el usuario quiere agregar.',
             },
-            required: ['productName'],
+            quantity: {
+              type: 'number',
+              description: 'Cantidad de unidades del producto a agregar. Si el usuario no la menciona, usa 1.',
+            },
           },
+          required: ['productName'],
         },
-      ],
+      },
     },
   ];
 
-  // 🧠 Reglas de comportamiento fijas para el modelo: extracción de producto/cantidad y tono de respuesta.
+  // 🧠 Reglas de comportamiento optimizadas
   private readonly systemInstruction = [
     'Eres el asistente experto de QuickEats con IA. Tu único objetivo es mapear los mensajes del usuario a las herramientas disponibles (get_order_status y add_product_to_cart).',
-    "Al extraer 'productName', haz una limpieza agresiva de verbos (quiero, ponme, añade), artículos y adjetivos. Extrae solo el núcleo (ej: si dicen 'un burger master xfa' o 'quiero un par de hamburguesas de Burger Master', el productName DEBE ser simplemente 'Burger Master').",
-    "Interpreta cantidades coloquiales en el parámetro 'quantity' (ej: 'un par' = 2, 'media docena' = 6). Si no se especifica, por defecto es 1.",
-    'Si el usuario mezcla intenciones (rastrear orden y pedir comida a la vez), prioriza la acción de agregar al carrito o la que aparezca primero, y menciónale de forma muy breve la otra en el texto final.',
+    "Al extraer 'productName', haz una limpieza agresiva de verbos (quiero, ponme, añade), artículos y adjetivos. Extrae solo el núcleo (ej: si dicen 'un burger master xfa', el productName DEBE ser simplemente 'Burger Master').",
+    "Interpreta cantidades coloquiales en 'quantity' (ej: 'un par' = 2, 'media docena' = 6). Por defecto es 1.",
+    'Si el usuario mezcla intenciones, prioriza agregar al carrito e indica brevemente la otra acción en tu mensaje.',
     'Mantén tus respuestas conversacionales sumamente cortas, dinámicas y con un tono amable peruano.',
   ].join('\n');
 
   constructor(private readonly httpService: HttpService) {
-    const apiKey = process.env.GEMINI_API_KEY || this.readEnvFileFallback('GEMINI_API_KEY');
+    const apiKey = process.env.GROQ_API_KEY || this.readEnvFileFallback('GROQ_API_KEY');
     if (!apiKey) {
-      this.logger.warn('⚠️ GEMINI_API_KEY no está configurada. El chatbot de IA no funcionará.');
+      this.logger.warn('⚠️ GROQ_API_KEY no está configurada. El chatbot de IA no funcionará.');
     }
-    this.genAI = new GoogleGenerativeAI(apiKey ?? '');
+    
+    // Conexión directa a la infraestructura de Groq
+    this.openai = new OpenAI({
+      apiKey: apiKey ?? '',
+      baseURL: 'https://api.groq.com/openai/v1',
+    });
   }
 
-  // 🟡 Fallback manual: cuando se levanta el gateway vía `concurrently` (start:all) sin Docker,
-  // process.env no siempre trae las variables de gateway/.env. Como respaldo, lo parseamos a mano.
   private readEnvFileFallback(key: string): string | undefined {
     try {
       const envPath = path.resolve(process.cwd(), '.env');
       const content = fs.readFileSync(envPath, 'utf-8');
-
       for (const line of content.split('\n')) {
         const trimmed = line.trim();
         if (!trimmed || trimmed.startsWith('#')) continue;
-
         const separatorIndex = trimmed.indexOf('=');
         if (separatorIndex === -1) continue;
-
         const currentKey = trimmed.slice(0, separatorIndex).trim();
         if (currentKey !== key) continue;
-
-        return trimmed
-          .slice(separatorIndex + 1)
-          .trim()
-          .replace(/^["']|["']$/g, '');
+        return trimmed.slice(separatorIndex + 1).trim().replace(/^["']|["']$/g, '');
       }
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       this.logger.warn(`⚠️ No se pudo leer gateway/.env como fallback: ${msg}`);
     }
-
     return undefined;
   }
 
   async chat(dto: ChatRequestDto): Promise<AiChatResponse> {
     try {
-      const model = this.genAI.getGenerativeModel({
-        model: 'gemini-2.5-flash',
+      const mappedHistory: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = (dto.history || []).map((h) => ({
+        role: h.role === 'model' ? 'assistant' : (h.role as 'user' | 'system'),
+        content: typeof h.parts === 'string' ? h.parts : h.parts?.[0]?.text || '',
+      }));
+
+      const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+        { role: 'system', content: this.systemInstruction },
+        ...mappedHistory,
+        { role: 'user', content: dto.message },
+      ];
+
+      // Uso del modelo Llama 3 en Groq (Ultra rápido y sin costos)
+      const response = await this.openai.chat.completions.create({
+        model: 'llama-3.1-8b-instant',
+        messages,
         tools: this.tools,
-        systemInstruction: this.systemInstruction,
+        tool_choice: 'auto',
+        max_tokens: 150,
+        temperature: 0.5,
       });
 
-      const chatSession = model.startChat({
-        history: dto.history || [], 
-      });
+      const messageResult = response.choices[0].message;
 
-      const result = await chatSession.sendMessage(dto.message);
-      const functionCalls = result.response.functionCalls();
-
-      if (!functionCalls || functionCalls.length === 0) {
-        return { type: 'message', message: result.response.text() };
+      if (!messageResult.tool_calls || messageResult.tool_calls.length === 0) {
+        return { type: 'message', message: messageResult.content || '' };
       }
 
-      const call = functionCalls[0];
+      const toolCall = messageResult.tool_calls[0];
 
-      if (call.name === 'get_order_status') {
-        return await this.handleOrderStatus(chatSession, call.args as unknown as GetOrderStatusArgs, dto.userId);
-      }
+      // 🛠️ Validación estricta con "in" para convencer a TypeScript y limpiar los errores del linter
+      if ('function' in toolCall) {
+        const args = JSON.parse(toolCall.function.arguments);
 
-      if (call.name === 'add_product_to_cart') {
-        return await this.handleAddToCart(chatSession, call.args as unknown as AddProductToCartArgs);
+        if (toolCall.function.name === 'get_order_status') {
+          return await this.handleOrderStatus(messages, toolCall, args as GetOrderStatusArgs, dto.userId);
+        }
+
+        if (toolCall.function.name === 'add_product_to_cart') {
+          return await this.handleAddToCart(messages, toolCall, args as AddProductToCartArgs);
+        }
       }
 
       return {
@@ -152,7 +159,7 @@ export class AiService {
       };
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
-      this.logger.error(`💥 Error al comunicarse con Gemini: ${msg}`);
+      this.logger.error(`💥 Error al comunicarse con Groq: ${msg}`);
       return {
         type: 'message',
         message: 'Tuve un problema para procesar tu mensaje. ¿Podrías intentarlo de nuevo en un momento?',
@@ -160,13 +167,12 @@ export class AiService {
     }
   }
 
-  // 🔍 Tool: get_order_status -> consulta el order-service y deja que Gemini redacte la respuesta
   private async handleOrderStatus(
-    chatSession: ChatSession,
+    previousMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[],
+    toolCall: OpenAI.Chat.Completions.ChatCompletionMessageToolCall,
     args: GetOrderStatusArgs,
     userId?: string,
   ): Promise<AiChatResponse> {
-    // 🧹 El usuario suele escribir el código visual con '#' (ej. "#9E6A6404"); el order-service no lo espera.
     const cleanedOrderId = args.orderId.trim().replace(/^#/, '');
 
     try {
@@ -179,19 +185,23 @@ export class AiService {
         };
       }
 
-      const followUp = await chatSession.sendMessage([
-        {
-          functionResponse: {
-            name: 'get_order_status',
-            response: {
+      const followUpResponse = await this.openai.chat.completions.create({
+        model: 'llama-3.1-8b-instant',
+        messages: [
+          ...previousMessages,
+          { role: 'assistant', tool_calls: [toolCall] },
+          {
+            role: 'tool',
+            tool_call_id: toolCall.id,
+            content: JSON.stringify({
               status: order.status,
               restaurantName: order.restaurantName,
-            },
+            }),
           },
-        },
-      ]);
+        ],
+      });
 
-      return { type: 'message', message: followUp.response.text() };
+      return { type: 'message', message: followUpResponse.choices[0].message.content || '' };
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       this.logger.error(`💥 Error al consultar la orden ${cleanedOrderId}: ${msg}`);
@@ -202,9 +212,6 @@ export class AiService {
     }
   }
 
-  // 🔎 1) Intenta match exacto por ID completo. 2) Si el usuario pasó el código corto (8 caracteres,
-  // el primer bloque del UUID que se muestra en el frontend) y conocemos su userId, buscamos por
-  // prefijo dentro de SU historial de órdenes (nunca en el de otros usuarios, por privacidad).
   private async resolveOrder(
     orderId: string,
     userId?: string,
@@ -232,9 +239,9 @@ export class AiService {
     return userOrders.find((order) => order.id.toLowerCase().startsWith(normalized));
   }
 
-  // 🛒 Tool: add_product_to_cart -> busca el producto real y retorna el payload de acción para el frontend
   private async handleAddToCart(
-    chatSession: ChatSession,
+    previousMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[],
+    toolCall: OpenAI.Chat.Completions.ChatCompletionMessageToolCall,
     args: AddProductToCartArgs,
   ): Promise<AiChatResponse> {
     try {
@@ -251,22 +258,29 @@ export class AiService {
         };
       }
 
-      // 🔢 Si el modelo no informa una cantidad válida, asumimos 1 en lugar de repreguntar
       const quantity = Number.isFinite(args.quantity) && Number(args.quantity) > 0 ? Number(args.quantity) : 1;
 
-      const followUp = await chatSession.sendMessage([
-        {
-          functionResponse: {
-            name: 'add_product_to_cart',
-            response: {
+      const { data: restaurant } = await firstValueFrom(
+        this.httpService.get<RestaurantServiceItem>(`${this.restaurantServiceBaseUrl}/restaurants/${match.restaurantId}`),
+      );
+
+      const followUpResponse = await this.openai.chat.completions.create({
+        model: 'llama-3.1-8b-instant',
+        messages: [
+          ...previousMessages,
+          { role: 'assistant', tool_calls: [toolCall] },
+          {
+            role: 'tool',
+            tool_call_id: toolCall.id,
+            content: JSON.stringify({
               found: true,
               productId: match.id,
               name: match.name,
               quantity,
-            },
+            }),
           },
-        },
-      ]);
+        ],
+      });
 
       const action: AddToCartActionResponse = {
         type: 'action',
@@ -274,9 +288,16 @@ export class AiService {
         payload: {
           productId: match.id,
           name: match.name,
+          price: Number(match.price ?? 0),
+          image: match.image ?? '',
+          calories: match.calories ?? null,
           quantity,
+          restaurantId: match.restaurantId,
+          restaurantName: restaurant.name,
+          restaurantDeliveryFee: Number(restaurant.deliveryFee ?? 0),
+          restaurantDeliveryTime: Number(restaurant.deliveryTime ?? 20),
         },
-        message: followUp.response.text(),
+        message: followUpResponse.choices[0].message.content || '',
       };
 
       return action;
@@ -290,14 +311,11 @@ export class AiService {
     }
   }
 
-  // 🔎 Matching en 3 niveles: exacto -> el nombre de BD incluye la query -> la query incluye el nombre de BD.
-  // El tercer nivel es lo que permite que "un burger master xfa" matchee con "Hamburguesa Burger Master".
   private findClosestProduct(
     products: ProductServiceItem[],
     productName: string,
   ): ProductServiceItem | undefined {
     const normalizedQuery = productName.trim().toLowerCase();
-
     return (
       products.find((p) => p.name.trim().toLowerCase() === normalizedQuery) ??
       products.find((p) => p.name.trim().toLowerCase().includes(normalizedQuery)) ??

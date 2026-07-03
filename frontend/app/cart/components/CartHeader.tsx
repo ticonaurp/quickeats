@@ -13,11 +13,11 @@ export default function CartHeader({ restaurantId, restaurantName }: CartHeaderP
 
   return (
     <div className="flex items-center gap-3">
-      <button 
+      <button
         // 🟢 CORREGIDO: Si no hay ID, te regresa a la vista principal en '/user'
         onClick={() => {
           if (!restaurantId || restaurantId === '/' || restaurantId === '') {
-            router.push('/user'); 
+            router.push('/user');
           } else {
             router.push(`/restaurants/${restaurantId}`);
           }

@@ -11,14 +11,33 @@ export interface ProductServiceItem {
   id: string;
   name: string;
   price?: number;
+  image?: string;
+  calories?: number;
+  restaurantId: string;
   isAvailable?: boolean;
+  [key: string]: unknown;
+}
+
+// 📦 Forma esperada del restaurante devuelto por el restaurant-service
+export interface RestaurantServiceItem {
+  id: string;
+  name: string;
+  deliveryFee?: number;
+  deliveryTime?: number;
   [key: string]: unknown;
 }
 
 export interface AddToCartPayload {
   productId: string;
   name: string;
+  price: number;
+  image: string;
+  calories: number | null;
   quantity: number;
+  restaurantId: string;
+  restaurantName: string;
+  restaurantDeliveryFee: number;
+  restaurantDeliveryTime: number;
 }
 
 // 🔧 Contrato estricto que el frontend espera para ejecutar una acción sobre el carrito

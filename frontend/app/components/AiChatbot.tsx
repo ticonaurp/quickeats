@@ -108,14 +108,26 @@ export default function AiChatbot() {
 
       // Evaluar si la IA devolvió una ACCIÓN REAL (Function Calling)
       if (data.type === 'action' && data.action === 'ADD_TO_CART') {
-        const { productId, name, quantity } = data.payload;
+        const { productId, name, price, image, calories, quantity, restaurantId, restaurantName, restaurantDeliveryFee, restaurantDeliveryTime } = data.payload;
 
-        // Extraer carrito actual del LocalStorage
+        // Extraer carrito y tienda activa actuales del LocalStorage
         const currentCart = JSON.parse(localStorage.getItem('quickeats_cart') || '[]');
-        
+        const savedRestaurantRaw = localStorage.getItem('quickeats_restaurant');
+        const savedRestaurant = savedRestaurantRaw ? JSON.parse(savedRestaurantRaw) : null;
+
+        // 🚫 El carrito es de UN SOLO restaurante: si ya hay productos de otra tienda, no mezclamos
+        if (currentCart.length > 0 && savedRestaurant && savedRestaurant.id !== restaurantId) {
+          toast.error(`Ya tienes productos de ${savedRestaurant.name} en tu carrito. Vacíalo antes de pedir en otra tienda.`);
+          setMessages((prev) => [
+            ...prev,
+            { id: Date.now().toString(), sender: 'bot', text: `No pude agregar ${name}: ya tienes un pedido activo de ${savedRestaurant.name}. Vacía tu carrito primero si quieres pedir de ${restaurantName}.` }
+          ]);
+          return;
+        }
+
         // Verificar si el producto ya existía para sumar cantidades
         const existingItemIndex = currentCart.findIndex((item: any) => (item.id === productId || item.productId === productId));
-        
+
         if (existingItemIndex > -1) {
           currentCart[existingItemIndex].quantity += quantity;
         } else {
@@ -123,20 +135,30 @@ export default function AiChatbot() {
             id: productId,
             productId: productId,
             name: name,
-            price: 18.90, 
+            price: price,
+            image: image,
+            calories: calories ? `${calories} cal` : '350 cal',
             quantity: quantity
           });
         }
 
         // Guardar cambios e impactar la UI del frontend de inmediato
         localStorage.setItem('quickeats_cart', JSON.stringify(currentCart));
-        
-        // Disparar un evento global nativo para que el TopNavbar/CartSidebar se enteren y se refresquen solos
-        window.dispatchEvent(new Event('storage'));
+        // Vinculamos el carrito a la tienda del producto agregado, igual que hace la página del restaurante
+        localStorage.setItem('quickeats_restaurant', JSON.stringify({
+          id: restaurantId,
+          name: restaurantName,
+          deliveryFee: restaurantDeliveryFee,
+          deliveryTime: restaurantDeliveryTime,
+        }));
+
+        // El evento 'storage' del navegador NO se dispara en la misma pestaña que hizo el cambio,
+        // así que usamos un evento propio para que las páginas abiertas (restaurante/carrito) se resincronicen
+        window.dispatchEvent(new CustomEvent('quickeats-cart-sync'));
         toast.success(`¡${name} añadido al carrito por la IA! 🛒`);
 
         setMessages((prev) => [
-          ...prev, 
+          ...prev,
           { id: Date.now().toString(), sender: 'bot', text: data.message, isAction: true }
         ]);
       } else {
