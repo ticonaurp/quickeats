@@ -125,7 +125,10 @@ export class AiService {
         systemInstruction: this.systemInstruction,
       });
 
-      const chatSession = model.startChat();
+      const chatSession = model.startChat({
+        history: dto.history || [], 
+      });
+
       const result = await chatSession.sendMessage(dto.message);
       const functionCalls = result.response.functionCalls();
 

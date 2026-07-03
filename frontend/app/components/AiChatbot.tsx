@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquare, X, Send, Bot, Sparkles, ShoppingCart } from 'lucide-react';
+import { MessageSquare, X, Send, Bot, Sparkles, ShoppingCart, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getUserId } from '../services/auth';
 
@@ -19,12 +19,43 @@ export default function AiChatbot() {
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false); // Control para evitar pisar el localStorage al arrancar
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // 1. Cargar historial del LocalStorage al montar el componente (Seguro para SSR/Next.js)
+  useEffect(() => {
+    const savedMessages = localStorage.getItem('quickeats_chat_history');
+    if (savedMessages) {
+      try {
+        setMessages(JSON.parse(savedMessages));
+      } catch (err) {
+        console.error('Error al restaurar el historial del chat:', err);
+      }
+    }
+    setIsInitialized(true);
+  }, []);
+
+  // 2. Guardar automáticamente en LocalStorage cada vez que cambien los mensajes
+  useEffect(() => {
+    if (isInitialized) {
+      localStorage.setItem('quickeats_chat_history', JSON.stringify(messages));
+    }
+  }, [messages, isInitialized]);
 
   // Auto-scroll al último mensaje recibido
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Función para limpiar el chat de pantalla y disco de forma segura
+  const handleClearChat = () => {
+    const defaultMessage: Message[] = [
+      { id: 'welcome', sender: 'bot', text: '¡Hola! Soy tu asistente de QuickEats con IA. Puedes preguntarme el estado de tus pedidos o pedirme que agregue platos a tu carrito.' }
+    ];
+    setMessages(defaultMessage);
+    localStorage.removeItem('quickeats_chat_history');
+    toast.info('Historial del chat borrado');
+  };
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +64,7 @@ export default function AiChatbot() {
     const userText = input.trim();
     setInput('');
     
-    // 1. Renderizar mensaje del usuario de inmediato
+    // Renderizar mensaje del usuario de inmediato
     const userMsgId = Date.now().toString();
     setMessages((prev) => [...prev, { id: userMsgId, sender: 'user', text: userText }]);
     setLoading(true);
@@ -42,18 +73,40 @@ export default function AiChatbot() {
       const gatewayUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
       const userId = getUserId() || undefined;
 
-      // 2. Consumir el módulo de IA del Gateway
+      // 🧠 PASO 3 OPTIMIZADO: Filtrar las acciones pasadas para que no compitan con el Function Calling
+      const formattedHistory = messages
+        .filter((msg) => !msg.isAction && msg.id !== 'welcome') // Omitimos logs de carritos y saludos
+        .map((msg) => ({
+          role: msg.sender === 'user' ? 'user' as const : 'model' as const,
+          parts: [{ text: msg.text }],
+        }));
+
+      // Buscamos el índice del primer mensaje que realmente envió el usuario (Garantiza regla de Google)
+      const firstUserIndex = formattedHistory.findIndex((msg) => msg.role === 'user');
+      let cleanHistory = firstUserIndex !== -1 ? formattedHistory.slice(firstUserIndex) : [];
+
+      // Si el filtro de arriba rompió la alternancia estricta, reiniciamos el array para darle prioridad al mensaje actual
+      if (cleanHistory.length > 1 && cleanHistory[cleanHistory.length - 1].role === 'user') {
+        cleanHistory = []; 
+      }
+
+      // Consumir el módulo de IA del Gateway incluyendo el historial refinado
       const response = await fetch(`${gatewayUrl}/ai/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userText, userId }),
+        body: JSON.stringify({ 
+          message: userText, 
+          userId,
+          history: cleanHistory
+        }),
       });
 
       if (!response.ok) throw new Error();
 
       const data = await response.json();
+      console.log("👉 RESPUESTA COMPLETA DE LA IA:", data); // Log de diagnóstico en consola
 
-      // 3. Evaluar si la IA devolvió una ACCIÓN REAL (Function Calling)
+      // Evaluar si la IA devolvió una ACCIÓN REAL (Function Calling)
       if (data.type === 'action' && data.action === 'ADD_TO_CART') {
         const { productId, name, quantity } = data.payload;
 
@@ -70,7 +123,7 @@ export default function AiChatbot() {
             id: productId,
             productId: productId,
             name: name,
-            price: 18.90, // Precio de prueba estándar o mapeado por el backend
+            price: 18.90, 
             quantity: quantity
           });
         }
@@ -136,12 +189,25 @@ export default function AiChatbot() {
                 </p>
               </div>
             </div>
-            <button 
-              onClick={() => setIsOpen(false)}
-              className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
-            >
-              <X size={16} />
-            </button>
+            
+            <div className="flex items-center gap-1">
+              {/* Botón para limpiar historial de chat */}
+              {messages.length > 1 && (
+                <button
+                  onClick={handleClearChat}
+                  title="Borrar historial"
+                  className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center hover:bg-red-500/20 text-white transition-colors"
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
+              <button 
+                onClick={() => setIsOpen(false)}
+                className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
+              >
+                <X size={16} />
+              </button>
+            </div>
           </div>
 
           {/* Caja de mensajes (Scrollable) */}
