@@ -18,12 +18,12 @@ export default function PagoPage() {
   const router = useRouter();
   const [cart, setCart] = useState<any[]>([]);
   const [restaurant, setRestaurant] = useState<any>(null);
-  
+
   const [step, setStep] = useState<'address' | 'payment'>('address');
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [loading, setLoading] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState(false);
-  
+
   const [address, setAddress] = useState({ street: 'Av. Principal 123', notes: '' });
   const [cardData, setCardData] = useState({ number: '', expiry: '', cvc: '', name: '' });
 
@@ -125,7 +125,7 @@ export default function PagoPage() {
 
       toast.success('¡Pedido realizado con éxito! 🎉');
       localStorage.removeItem('quickeats_cart');
-      router.push('/orders'); 
+      router.push('/orders');
 
     } catch (error: any) {
       console.error('Error al generar la orden:', error);

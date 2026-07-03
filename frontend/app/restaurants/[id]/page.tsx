@@ -72,7 +72,9 @@ export default function RestaurantDetailPage({ params }: RestaurantPageProps) {
           description: restaurantData.description || 'Sin descripción disponible por el momento.',
           deliveryFee: Number(restaurantData.deliveryFee) || 0.00,
           deliveryTime: Number(restaurantData.deliveryTime || restaurantData.deliveryMin || restaurantData.estimatedTime || 25),
-          coverImage: restaurantData.image || 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=1200'
+          coverImage: restaurantData.image || 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=1200',
+          // 🚫 Estado real (calculado por el backend a partir de horarios + switch manual del admin)
+          isOpen: restaurantData.isOpen ?? true
         });
 
         setMenuItems(mappedProducts);
@@ -88,19 +90,33 @@ export default function RestaurantDetailPage({ params }: RestaurantPageProps) {
     }
   }, [restaurantId]); // Reacciona de forma reactiva si el ID cambia en la URL
 
+  // 🛡️ Rastrea si ESTE componente llegó a tener productos, para no confundir
+  // "todavía no cargué nada" con "el usuario vació su carrito"
+  const hadItemsRef = React.useRef(false);
+
   // 📥 NUEVO EFECTO DE HIDRATACIÓN: Lee el carrito guardado apenas entras a la página
   useEffect(() => {
-    const savedCart = localStorage.getItem('quickeats_cart');
-    const savedRestaurant = localStorage.getItem('quickeats_restaurant');
+    const hydrateFromStorage = () => {
+      const savedCart = localStorage.getItem('quickeats_cart');
+      const savedRestaurant = localStorage.getItem('quickeats_restaurant');
 
-    if (savedCart && savedRestaurant) {
-      const parsedRest = JSON.parse(savedRestaurant);
-      // Solo restauramos el carrito si pertenece a este restaurante específico
-      if (parsedRest.id === restaurantId) {
-        setCart(JSON.parse(savedCart));
+      if (savedCart && savedRestaurant) {
+        const parsedRest = JSON.parse(savedRestaurant);
+        // Solo restauramos el carrito si pertenece a este restaurante específico
+        if (parsedRest.id === restaurantId) {
+          setCart(JSON.parse(savedCart));
+          hadItemsRef.current = true;
+        }
       }
-    }
+    };
+
+    hydrateFromStorage();
     setIsCartLoaded(true); // Bloqueo desactivado: Ya sabemos qué había en el navegador
+
+    // 🔄 El chatbot puede agregar productos a este mismo restaurante mientras la página ya está montada.
+    // Como escribe directo en localStorage, escuchamos su evento para no pisar esos productos con el estado local desactualizado.
+    window.addEventListener('quickeats-cart-sync', hydrateFromStorage);
+    return () => window.removeEventListener('quickeats-cart-sync', hydrateFromStorage);
   }, [restaurantId]);
 
   // 5. EFECTO DE PERSISTENCIA: Sincroniza los cambios hacia el LocalStorage
@@ -124,15 +140,38 @@ export default function RestaurantDetailPage({ params }: RestaurantPageProps) {
 
       localStorage.setItem('quickeats_cart', JSON.stringify(formattedCartForCheckout));
       localStorage.setItem('quickeats_restaurant', JSON.stringify(restaurantInfo));
-    } else if (cart.length === 0 && isCartLoaded) {
-      // Si el usuario remueve todos los elementos desde el sidebar, limpiamos el almacenamiento
+      hadItemsRef.current = true;
+    } else if (cart.length === 0 && hadItemsRef.current) {
+      // Solo limpiamos si ESTE componente había guardado productos y el usuario los quitó todos.
+      // Si nunca llegamos a tener nada (ej. carrito de otro restaurante o añadido por el chatbot),
+      // no tocamos el localStorage.
       localStorage.removeItem('quickeats_cart');
       localStorage.removeItem('quickeats_restaurant');
+      hadItemsRef.current = false;
     }
   }, [cart, restaurantInfo, menuItems, isCartLoaded]);
 
   // Lógica de manipulación de cantidades en el carrito
   const handleUpdateQuantity = (id: string, name: string, price: number, action: 'increase' | 'decrease') => {
+    if (action === 'increase') {
+      // 🚫 No tiene sentido pedir de un restaurante cerrado/inactivo
+      if (!restaurantInfo?.isOpen) {
+        toast.error(`${restaurantInfo?.name || 'Esta tienda'} está cerrado en este momento y no puede recibir pedidos.`);
+        return;
+      }
+
+      // 🚫 El carrito es de UN SOLO restaurante: si ya hay productos de otra tienda, bloqueamos el agregado
+      const savedRestaurantRaw = localStorage.getItem('quickeats_restaurant');
+      const savedRestaurant = savedRestaurantRaw ? JSON.parse(savedRestaurantRaw) : null;
+      const savedCartRaw = localStorage.getItem('quickeats_cart');
+      const savedCart = savedCartRaw ? JSON.parse(savedCartRaw) : [];
+
+      if (savedCart.length > 0 && savedRestaurant && savedRestaurant.id !== restaurantId) {
+        toast.error(`Ya tienes productos de ${savedRestaurant.name} en tu carrito. Vacíalo antes de pedir en otra tienda.`);
+        return;
+      }
+    }
+
     setCart((prevCart) => {
       const existingItem = prevCart.find((item) => item.id === id);
 
@@ -174,16 +213,18 @@ export default function RestaurantDetailPage({ params }: RestaurantPageProps) {
         coverImage={restaurantInfo.coverImage} />
 
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6">
-        <RestaurantInfoCard 
-          description={restaurantInfo.description} 
-          deliveryFee={restaurantInfo.deliveryFee} />
+        <RestaurantInfoCard
+          description={restaurantInfo.description}
+          deliveryFee={restaurantInfo.deliveryFee}
+          isOpen={restaurantInfo.isOpen} />
 
         <div className="grid grid-cols-1 lg:grid-cols-10 gap-8 mt-8 pb-16">
           {/* Listado de Platos filtrados en tiempo real */}
           <div className="lg:col-span-7">
-            <MenuSection 
-              items={menuItems} 
-              cart={cart} 
+            <MenuSection
+              items={menuItems}
+              cart={cart}
+              isOpen={restaurantInfo.isOpen}
               onUpdateQuantity={handleUpdateQuantity} />
           </div>
 

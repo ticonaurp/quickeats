@@ -5,6 +5,7 @@ import { RestaurantModule } from './restaurant/restaurant.module';
 import { ProductModule } from './product/product.module'; // 👈 Tu importación
 import { OrderModule } from './order/order.module'; // 👈 Importación de tu compañero
 import { NotificationModule } from './notification/notification.module'; // 👈 Importación de tu compañero
+import { AiModule } from './ai/ai.module'; // 👈 Chatbot de IA (Function Calling con Gemini)
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -16,6 +17,7 @@ import { AppService } from './app.service';
     ProductModule, // 👈 Tus productos registrados
     OrderModule, // 👈 Sus órdenes registradas
     NotificationModule, // 👈 Sus notificaciones registradas
+    AiModule, // 👈 Módulo de IA registrado
   ],
   controllers: [AppController],
   providers: [AppService],

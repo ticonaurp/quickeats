@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Poppins, Plus_Jakarta_Sans } from "next/font/google";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 // 🎨 Cargamos las fuentes oficiales del sistema de diseño Mango V2.5
@@ -38,6 +39,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-[#f8fafc] font-sans text-slate-900 selection:bg-amber-500 selection:text-white">
         {children}
+        <Toaster richColors position="top-right" />
       </body>
     </html>
   );

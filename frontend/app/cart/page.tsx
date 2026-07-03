@@ -33,16 +33,20 @@ export default function CartPage() {
 
   // 📋 1. EFECTO DE CARGA: Recupera la información real del LocalStorage al montar el componente
   useEffect(() => {
-    const savedCart = localStorage.getItem('quickeats_cart');
-    const savedRestaurant = localStorage.getItem('quickeats_restaurant');
+    const hydrateFromStorage = () => {
+      const savedCart = localStorage.getItem('quickeats_cart');
+      const savedRestaurant = localStorage.getItem('quickeats_restaurant');
 
-    if (savedCart) {
-      setCart(JSON.parse(savedCart));
-    }
-    if (savedRestaurant) {
-      setRestaurantInfo(JSON.parse(savedRestaurant));
-    }
+      setCart(savedCart ? JSON.parse(savedCart) : []);
+      setRestaurantInfo(savedRestaurant ? JSON.parse(savedRestaurant) : null);
+    };
+
+    hydrateFromStorage();
     setIsLoaded(true);
+
+    // 🔄 Si el chatbot agrega un producto mientras esta página ya está abierta, se resincroniza sola
+    window.addEventListener('quickeats-cart-sync', hydrateFromStorage);
+    return () => window.removeEventListener('quickeats-cart-sync', hydrateFromStorage);
   }, []);
 
   // 🔄 2. EFECTO DE SINCRONIZACIÓN: 🟢 CORREGIDO PARA EVITAR EL BUG 404
@@ -111,16 +115,16 @@ export default function CartPage() {
       {/* 🛠️ CORREGIDO: Se reemplazó max-w-[1440px] por max-w-360 según sugerencia de Tailwind */}
       <div className="max-w-360 mx-auto px-4 sm:px-6 pt-10">
         <div className="grid grid-cols-1 md:grid-cols-10 gap-8">
-          
+
           {/* Lado Izquierdo: Lista de ítems */}
           <div className="md:col-span-6 space-y-7">
             {/* 🛡️ SALVAVIDAS: Si no hay ID por alguna razón extraña, lo mandamos al Home ("/") en lugar de un 404 */}
-            <CartHeader 
-              restaurantId={restaurantInfo?.id || '/'} 
-              restaurantName={restaurantInfo?.name || 'tu tienda'} 
+            <CartHeader
+              restaurantId={restaurantInfo?.id || '/'}
+              restaurantName={restaurantInfo?.name || 'tu tienda'}
             />
-            
-            <CartItemsList 
+
+            <CartItemsList
               cart={cart}
               restaurantId={restaurantInfo?.id || '/'}
               onUpdateQuantity={handleUpdateQuantity}
@@ -131,7 +135,7 @@ export default function CartPage() {
           {/* Lado Derecho: Resumen financiero */}
           <div className="md:col-span-4 sticky top-6 self-start space-y-4">
             {/* 🟢 CORREGIDO: Inyectamos la prop onProceed que requería TypeScript */}
-            <CartSummary 
+            <CartSummary
               subtotal={subtotal}
               deliveryFee={deliveryFee}
               total={total}
@@ -140,9 +144,9 @@ export default function CartPage() {
             />
 
             {subtotal > 0 && restaurantInfo && (
-              <DeliveryEstimation 
-                restaurantName={restaurantInfo.name} 
-                deliveryTime={restaurantInfo.deliveryTime || 20} 
+              <DeliveryEstimation
+                restaurantName={restaurantInfo.name}
+                deliveryTime={restaurantInfo.deliveryTime || 20}
               />
             )}
           </div>
