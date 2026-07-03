@@ -16,13 +16,19 @@ export class OrderService {
     let restaurant: { name?: string; isOpen?: boolean };
 
     try {
-      const response = await fetch(`${this.restaurantServiceUrl}/restaurants/${restaurantId}`);
-      if (!response.ok) {
+      const response = await fetch(`${this.restaurantServiceUrl}/restaurants/${restaurantId}`, {
+        signal: AbortSignal.timeout(5000),
+      });
+      if (response.status === 404) {
         throw new NotFoundException('El restaurante de este pedido ya no existe.');
+      }
+      if (!response.ok) {
+        throw new Error(`restaurant-service respondió ${response.status}`);
       }
       restaurant = await response.json();
     } catch (error) {
       if (error instanceof NotFoundException) throw error;
+      console.error('assertRestaurantIsOpen: fallo verificando restaurante', restaurantId, error);
       throw new BadRequestException('No se pudo verificar el estado del restaurante. Intenta de nuevo.');
     }
 
