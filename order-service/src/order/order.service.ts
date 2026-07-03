@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 
@@ -6,7 +6,36 @@ import { CreateOrderDto } from './dto/create-order.dto';
 export class OrderService {
   constructor(private prisma: PrismaService) {}
 
+  // 🟢 En Docker se inyecta RESTAURANT_SERVICE_URL; en local cae a localhost.
+  private readonly restaurantServiceUrl =
+    process.env.RESTAURANT_SERVICE_URL || 'http://localhost:3003';
+
+  // 🛡️ Barrera de última línea: sin importar qué mande el cliente (frontend, chatbot, Postman),
+  // nunca se crea una orden para un restaurante cerrado.
+  private async assertRestaurantIsOpen(restaurantId: string) {
+    let restaurant: { name?: string; isOpen?: boolean };
+
+    try {
+      const response = await fetch(`${this.restaurantServiceUrl}/restaurants/${restaurantId}`);
+      if (!response.ok) {
+        throw new NotFoundException('El restaurante de este pedido ya no existe.');
+      }
+      restaurant = await response.json();
+    } catch (error) {
+      if (error instanceof NotFoundException) throw error;
+      throw new BadRequestException('No se pudo verificar el estado del restaurante. Intenta de nuevo.');
+    }
+
+    if (restaurant.isOpen === false) {
+      throw new BadRequestException(
+        `${restaurant.name ?? 'Este restaurante'} está cerrado en este momento y no puede recibir pedidos.`,
+      );
+    }
+  }
+
   async create(createOrderDto: CreateOrderDto) {
+    await this.assertRestaurantIsOpen(createOrderDto.restaurantId);
+
     const { items, ...orderData } = createOrderDto;
 
     const order = await this.prisma.order.create({

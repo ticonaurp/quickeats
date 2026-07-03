@@ -72,7 +72,9 @@ export default function RestaurantDetailPage({ params }: RestaurantPageProps) {
           description: restaurantData.description || 'Sin descripción disponible por el momento.',
           deliveryFee: Number(restaurantData.deliveryFee) || 0.00,
           deliveryTime: Number(restaurantData.deliveryTime || restaurantData.deliveryMin || restaurantData.estimatedTime || 25),
-          coverImage: restaurantData.image || 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=1200'
+          coverImage: restaurantData.image || 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=1200',
+          // 🚫 Estado real (calculado por el backend a partir de horarios + switch manual del admin)
+          isOpen: restaurantData.isOpen ?? true
         });
 
         setMenuItems(mappedProducts);
@@ -151,8 +153,14 @@ export default function RestaurantDetailPage({ params }: RestaurantPageProps) {
 
   // Lógica de manipulación de cantidades en el carrito
   const handleUpdateQuantity = (id: string, name: string, price: number, action: 'increase' | 'decrease') => {
-    // 🚫 El carrito es de UN SOLO restaurante: si ya hay productos de otra tienda, bloqueamos el agregado
     if (action === 'increase') {
+      // 🚫 No tiene sentido pedir de un restaurante cerrado/inactivo
+      if (!restaurantInfo?.isOpen) {
+        toast.error(`${restaurantInfo?.name || 'Esta tienda'} está cerrado en este momento y no puede recibir pedidos.`);
+        return;
+      }
+
+      // 🚫 El carrito es de UN SOLO restaurante: si ya hay productos de otra tienda, bloqueamos el agregado
       const savedRestaurantRaw = localStorage.getItem('quickeats_restaurant');
       const savedRestaurant = savedRestaurantRaw ? JSON.parse(savedRestaurantRaw) : null;
       const savedCartRaw = localStorage.getItem('quickeats_cart');
@@ -205,16 +213,18 @@ export default function RestaurantDetailPage({ params }: RestaurantPageProps) {
         coverImage={restaurantInfo.coverImage} />
 
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6">
-        <RestaurantInfoCard 
-          description={restaurantInfo.description} 
-          deliveryFee={restaurantInfo.deliveryFee} />
+        <RestaurantInfoCard
+          description={restaurantInfo.description}
+          deliveryFee={restaurantInfo.deliveryFee}
+          isOpen={restaurantInfo.isOpen} />
 
         <div className="grid grid-cols-1 lg:grid-cols-10 gap-8 mt-8 pb-16">
           {/* Listado de Platos filtrados en tiempo real */}
           <div className="lg:col-span-7">
-            <MenuSection 
-              items={menuItems} 
-              cart={cart} 
+            <MenuSection
+              items={menuItems}
+              cart={cart}
+              isOpen={restaurantInfo.isOpen}
               onUpdateQuantity={handleUpdateQuantity} />
           </div>
 

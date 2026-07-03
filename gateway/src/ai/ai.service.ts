@@ -264,6 +264,14 @@ export class AiService {
         this.httpService.get<RestaurantServiceItem>(`${this.restaurantServiceBaseUrl}/restaurants/${match.restaurantId}`),
       );
 
+      // 🚫 No tiene sentido ofrecer/agregar productos de un restaurante cerrado o inactivo
+      if (restaurant.isOpen === false) {
+        return {
+          type: 'message',
+          message: `${restaurant.name} está cerrado en este momento y no puede recibir pedidos. Intenta más tarde o pídeme algo de otra tienda.`,
+        };
+      }
+
       const followUpResponse = await this.openai.chat.completions.create({
         model: 'llama-3.1-8b-instant',
         messages: [

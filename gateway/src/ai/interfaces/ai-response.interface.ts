@@ -24,6 +24,7 @@ export interface RestaurantServiceItem {
   name: string;
   deliveryFee?: number;
   deliveryTime?: number;
+  isOpen?: boolean;
   [key: string]: unknown;
 }
 

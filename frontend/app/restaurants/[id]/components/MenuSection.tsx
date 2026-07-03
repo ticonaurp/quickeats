@@ -17,10 +17,11 @@ interface MenuItem {
 interface MenuSectionProps {
   items: MenuItem[];
   cart: CartItem[];
+  isOpen: boolean;
   onUpdateQuantity: (id: string, name: string, price: number, action: 'increase' | 'decrease') => void;
 }
 
-export default function MenuSection({ items, cart, onUpdateQuantity }: MenuSectionProps) {
+export default function MenuSection({ items, cart, isOpen, onUpdateQuantity }: MenuSectionProps) {
   return (
     <div className="space-y-4">
       {items.map((item) => {
@@ -66,29 +67,31 @@ export default function MenuSection({ items, cart, onUpdateQuantity }: MenuSecti
               {quantity > 0 ? (
                 /* 🟢 Módulo de Control de Cantidad Activo (Estilo Figma) */
                 <div className="flex items-center justify-between w-full bg-gray-50 rounded-xl p-1 border border-gray-100">
-                  <button 
+                  <button
                     onClick={() => onUpdateQuantity(item.id, item.name, item.price, 'decrease')}
                     className="w-7 h-7 bg-white rounded-lg flex items-center justify-center border border-gray-200/60 hover:bg-gray-100 transition-colors text-gray-600"
                   >
                     <Minus size={12} className="stroke-[2.5]" />
                   </button>
                   <span className="text-[#0F172A] font-bold text-[0.88rem]">{quantity}</span>
-                  <button 
+                  <button
                     onClick={() => onUpdateQuantity(item.id, item.name, item.price, 'increase')}
-                    className="w-7 h-7 bg-[#F97316] text-white rounded-lg flex items-center justify-center hover:bg-[#EA580C] transition-colors"
+                    disabled={!isOpen}
+                    className="w-7 h-7 bg-[#F97316] text-white rounded-lg flex items-center justify-center hover:bg-[#EA580C] transition-colors disabled:opacity-40 disabled:hover:bg-[#F97316] disabled:cursor-not-allowed"
                   >
                     <Plus size={12} className="stroke-[2.5]" />
                   </button>
                 </div>
               ) : (
-                /* Botón Inicial de Agregar */
-                <motion.button 
-                  whileTap={{ scale: 0.95 }}
+                /* Botón Inicial de Agregar (deshabilitado si el restaurante está cerrado) */
+                <motion.button
+                  whileTap={isOpen ? { scale: 0.95 } : undefined}
                   onClick={() => onUpdateQuantity(item.id, item.name, item.price, 'increase')}
-                  className="w-full bg-[#F97316] text-white font-bold text-[0.82rem] py-1.5 px-3 rounded-xl flex items-center justify-center gap-1 hover:bg-[#EA580C] transition-colors shadow-sm shadow-orange-100"
+                  disabled={!isOpen}
+                  className="w-full bg-[#F97316] text-white font-bold text-[0.82rem] py-1.5 px-3 rounded-xl flex items-center justify-center gap-1 hover:bg-[#EA580C] transition-colors shadow-sm shadow-orange-100 disabled:opacity-40 disabled:hover:bg-[#F97316] disabled:cursor-not-allowed"
                 >
                   <Plus size={14} className="stroke-[2.5]" />
-                  Agregar
+                  {isOpen ? 'Agregar' : 'Cerrado'}
                 </motion.button>
               )}
             </div>
