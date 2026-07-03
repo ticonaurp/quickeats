@@ -23,3 +23,8 @@ We are implementing an **Interactive AI Agent (Function Calling)** embedded into
 ## Operational Constraints
 - DO NOT run production build or install packages globally unless explicitly requested.
 - Prioritize standalone modular modifications over massive multi-file refactors.
+
+## CI/CD & Environment Separation
+- `.github/workflows/ci-cd.yml` triggers on `main` only: builds and pushes all six service images to ACR tagged `:latest`, then runs `az containerapp update` against the live Container Apps in Resource Group `rg-quickeats-dev`.
+- `.github/workflows/ci-cd-develop.yml` triggers on `develop` only: builds and pushes the same six images to ACR tagged `:dev`. It intentionally does **not** run `az containerapp update` — there is currently only one set of Container Apps (`ca-frontend`, `ca-gateway`, `ca-auth-service`, `ca-restaurant-service`, `ca-order-service`, `ca-notification-service`), and they serve live traffic. Auto-deploying `develop` pushes onto them would overwrite the only running environment.
+- **Pending before enabling automatic `develop` deploys**: provision a dedicated Container Apps set (e.g. under a new `rg-quickeats-prod` or equivalent second environment) so `:dev` images can be deployed automatically without risking the current live instance. Until that exists, promoting a `:dev` image to the live apps must be done manually and deliberately.
