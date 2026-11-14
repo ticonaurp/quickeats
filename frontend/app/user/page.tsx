@@ -18,7 +18,7 @@ export default function UserPage() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
 
   // 🎚️ Scroll horizontal de las píldoras de categorías (flechas en desktop).
   const pillsRef = useRef<HTMLDivElement>(null);

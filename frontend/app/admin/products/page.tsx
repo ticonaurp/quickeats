@@ -43,7 +43,7 @@ export default function ProductManagementPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   // 🌐 Base URL dinámica para todo el componente
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
 
   // 🔍 Carga sincronizada desde el Gateway sin caché de Next.js
   useEffect(() => {

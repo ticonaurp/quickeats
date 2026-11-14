@@ -37,7 +37,7 @@ export default function TopNavbar() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
 
   // Resaltado del enlace activo según la ruta actual.
   const isRestaurantsActive = pathname === '/user' || pathname.startsWith('/restaurants');

@@ -88,7 +88,7 @@ export default function PagoPage() {
         return;
       }
 
-      const gatewayUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const gatewayUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
 
       // 📦 Agregamos el campo 'userId' requerido obligatoriamente por el CreateOrderDto
       const orderPayload = {

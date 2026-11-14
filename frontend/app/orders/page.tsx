@@ -211,7 +211,7 @@ export default function OrdersHistoryScreen() {
 
     const loadData = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/orders/user/${userId}?_t=${Date.now()}`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || '/api'}/orders/user/${userId}?_t=${Date.now()}`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
           cache: 'no-store'

@@ -40,7 +40,7 @@ export function RegisterForm() {
 
       // 🌐 Obtenemos la URL del API Gateway de forma dinámica de las variables de entorno
       // Si la variable no existe (como en local), usará 'http://localhost:3001' como respaldo
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
 
       console.log(`🚀 Enviando datos al Gateway (${baseUrl}):`, payload);
 

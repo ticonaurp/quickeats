@@ -21,7 +21,7 @@ export interface CreateOrderPayload {
 }
 
 // 🌐 Base URL dinámica para el archivo de servicios (Render o Local)
-const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const baseUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 // 🚀 Enviar la orden al API Gateway
 export const createOrder = async (payload: CreateOrderPayload) => {

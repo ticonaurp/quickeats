@@ -47,7 +47,7 @@ export default function RestaurantsPage() {
   }, [restaurants]);
 
   // 🌐 Base URL dinámica para el componente
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
 
   // ⏱️ EFECTO DINÁMICO DE INTEGRACIÓN: Carga inicial + Polling continuo inteligente
   useEffect(() => {

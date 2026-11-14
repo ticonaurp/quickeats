@@ -8,7 +8,7 @@ export interface CreateProductPayload {
 }
 
 // 🌐 Base URL dinámica apuntando a tu API Gateway (Puerto 3001)
-const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const baseUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 // 2. Función para listar los productos (🟢 CORREGIDA: Ahora acepta y concatena el restaurantId)
 export const getProducts = async (restaurantId?: string) => {

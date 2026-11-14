@@ -70,7 +70,7 @@ export default function AiChatbot() {
     setLoading(true);
 
     try {
-      const gatewayUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const gatewayUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
       const userId = getUserId() || undefined;
 
       // 🧠 PASO 3 OPTIMIZADO: Filtrar las acciones pasadas para que no compitan con el Function Calling

@@ -19,6 +19,8 @@ import {
 export class AiService {
   private readonly logger = new Logger(AiService.name);
   private readonly openai: OpenAI;
+  // Modelo de Groq configurable: Groq retira modelos con el tiempo (llama-3.1-8b-instant ya no existe).
+  private readonly model: string;
 
   // 🟢 URLs inyectadas para entornos Docker/K8s o locales
   private readonly orderServiceUrl = `${process.env.ORDER_SERVICE_URL || 'http://localhost:3004'}/orders`;
@@ -87,6 +89,8 @@ export class AiService {
       apiKey: apiKey ?? '',
       baseURL: 'https://api.groq.com/openai/v1',
     });
+    this.model =
+      process.env.GROQ_MODEL || this.readEnvFileFallback('GROQ_MODEL') || 'openai/gpt-oss-20b';
   }
 
   private readEnvFileFallback(key: string): string | undefined {
@@ -122,14 +126,17 @@ export class AiService {
         { role: 'user', content: dto.message },
       ];
 
-      // Uso del modelo Llama 3 en Groq (Ultra rápido y sin costos)
+      // Modelo en Groq (capa gratuita). gpt-oss "razona" antes de responder: el razonamiento
+      // consume tokens, por eso se usa esfuerzo bajo y un margen de tokens amplio
+      // (con 150 se quedaba sin espacio y devolvía una respuesta vacía).
       const response = await this.openai.chat.completions.create({
-        model: 'llama-3.1-8b-instant',
+        model: this.model,
         messages,
         tools: this.tools,
         tool_choice: 'auto',
-        max_tokens: 150,
+        max_tokens: 1024,
         temperature: 0.5,
+        reasoning_effort: 'low',
       });
 
       const messageResult = response.choices[0].message;
@@ -186,7 +193,9 @@ export class AiService {
       }
 
       const followUpResponse = await this.openai.chat.completions.create({
-        model: 'llama-3.1-8b-instant',
+        model: this.model,
+        max_tokens: 1024,
+        reasoning_effort: 'low',
         messages: [
           ...previousMessages,
           { role: 'assistant', tool_calls: [toolCall] },
@@ -273,7 +282,9 @@ export class AiService {
       }
 
       const followUpResponse = await this.openai.chat.completions.create({
-        model: 'llama-3.1-8b-instant',
+        model: this.model,
+        max_tokens: 1024,
+        reasoning_effort: 'low',
         messages: [
           ...previousMessages,
           { role: 'assistant', tool_calls: [toolCall] },
@@ -323,11 +334,33 @@ export class AiService {
     products: ProductServiceItem[],
     productName: string,
   ): ProductServiceItem | undefined {
-    const normalizedQuery = productName.trim().toLowerCase();
-    return (
-      products.find((p) => p.name.trim().toLowerCase() === normalizedQuery) ??
-      products.find((p) => p.name.trim().toLowerCase().includes(normalizedQuery)) ??
-      products.find((p) => normalizedQuery.includes(p.name.trim().toLowerCase()))
-    );
+    // Sin tildes ni mayúsculas, para que "Pollo a la brasa" y "pollo a la brasá" coincidan.
+    const normalize = (text: string) =>
+      text.normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase();
+
+    const normalizedQuery = normalize(productName);
+    const exactOrContained =
+      products.find((p) => normalize(p.name) === normalizedQuery) ??
+      products.find((p) => normalize(p.name).includes(normalizedQuery)) ??
+      products.find((p) => normalizedQuery.includes(normalize(p.name)));
+    if (exactOrContained) return exactOrContained;
+
+    // Respaldo por palabras: el modelo a veces resume el nombre ("Burger Master" para
+    // "Burger Prueba Master"). Se elige el producto que comparte más palabras con la
+    // búsqueda, exigiendo al menos la mitad de ellas.
+    const queryWords = normalizedQuery.split(/\s+/).filter((w) => w.length > 2);
+    if (queryWords.length === 0) return undefined;
+
+    let best: ProductServiceItem | undefined;
+    let bestScore = 0;
+    for (const product of products) {
+      const nameWords = normalize(product.name).split(/\s+/);
+      const score = queryWords.filter((w) => nameWords.some((n) => n.startsWith(w))).length;
+      if (score > bestScore) {
+        best = product;
+        bestScore = score;
+      }
+    }
+    return bestScore >= Math.ceil(queryWords.length / 2) ? best : undefined;
   }
 }

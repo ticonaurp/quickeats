@@ -40,7 +40,7 @@ export function RestaurantForm() {
   });
 
   // 🌐 Base URL dinámica para el componente (Render o Local)
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
 
   // 2. Traer data real del Gateway si estamos en modo Edición
   useEffect(() => {

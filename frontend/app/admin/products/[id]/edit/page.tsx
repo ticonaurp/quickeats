@@ -38,7 +38,7 @@ export default function EditProductPage() {
   const [isPopular, setIsPopular] = useState(false);
 
   // 🌐 Base URL dinámica para el componente (Render o Local)
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
 
   // 🔍 CARGA PARALELA: Datos del producto actual + Lista de restaurantes
   useEffect(() => {

@@ -17,7 +17,7 @@ function LoginFields() {
     setLoading(true);
 
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
       console.log("🚀 Intentando conectar al backend en:", `${baseUrl}/auth/login`);
 
       const response = await fetch(`${baseUrl}/auth/login`, {

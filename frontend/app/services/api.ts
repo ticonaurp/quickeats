@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 export async function fetchFromGateway(endpoint: string, options?: RequestInit) {
   // Capturamos el token JWT si el usuario ya se logueó
